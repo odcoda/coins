@@ -59,11 +59,11 @@ enum RewardEngine {
         apply(event: structured, to: &snapshot.state, now: now)
         events.append(structured)
 
-        for milestone in snapshot.config.comboMilestones where progress.completionsToday == milestone.count {
+        for milestone in snapshot.config.comboMilestones where snapshot.state.dailyCompletionCount == milestone.count {
             let combo = RewardEvent(
                 id: UUID(),
                 title: milestone.title,
-                detail: "You hit \(milestone.count) completions today.",
+                detail: "You hit \(milestone.count) total completions today.",
                 coins: milestone.bonusCoins,
                 kind: .combo
             )
@@ -295,4 +295,3 @@ enum RewardEngine {
         return formatter
     }()
 }
-

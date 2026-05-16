@@ -7,3 +7,10 @@ started the native ios app scaffold and first reward loop:
 Up next:
 - expand the game-master editor and polish animations/audio
 - run the tests on a live simulator once CoreSimulator is available
+
+## 2026-05-16 simulator tests passing
+ran the live iphone 15 simulator tests and fixed combo rewards:
+- combo milestones now trigger from total daily completions
+- reward engine tests pass on ios 17.5 simulator
+Up next:
+- expand the game-master editor and polish animations/audio

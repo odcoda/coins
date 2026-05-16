@@ -22,3 +22,11 @@ improved the first-run app ergonomics:
 - expanded the readme with repo and app behavior notes
 Up next:
 - make game-master activity editing more complete
+
+## 2026-05-16 simulator launch fix
+stabilized simulator launch configuration:
+- replaced generated app plist with an explicit Info.plist
+- fixed Swift 5.10 project generation quoting
+- verified clean simulator build, install, launch, and tests
+Up next:
+- retry Xcode Run from the UI

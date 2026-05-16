@@ -10,7 +10,7 @@ options:
 settings:
   base:
     ALWAYS_SEARCH_USER_PATHS: NO
-    SWIFT_VERSION: 5.10
+    SWIFT_VERSION: "5.10"
     DEVELOPMENT_TEAM: ""
   configs:
     Debug:
@@ -29,19 +29,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.odile.coins
         PRODUCT_NAME: Coins
         TARGETED_DEVICE_FAMILY: "1,2"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Coins
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationPortraitUpsideDown
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Coins/Info.plist
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
         CODE_SIGN_STYLE: Automatic

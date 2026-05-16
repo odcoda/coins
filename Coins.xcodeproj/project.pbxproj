@@ -41,6 +41,7 @@
 		760739624DF9D0E5028AE474 /* GameModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameModels.swift; sourceTree = "<group>"; };
 		7938D1D5DA6D10835DE7AF0E /* CoinsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinsApp.swift; sourceTree = "<group>"; };
 		AF6B20EA9F87633847585646 /* CoinTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTheme.swift; sourceTree = "<group>"; };
+		C64067BBD97ADED60D74144D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D352D33300E37F42EACA384A /* GameMasterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameMasterView.swift; sourceTree = "<group>"; };
 		ECE598662076047185DC54D9 /* CoinsTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CoinsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FE8280F0147638D138F17B18 /* GameStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameStore.swift; sourceTree = "<group>"; };
@@ -66,6 +67,7 @@
 		220247F2FD0CE80E03876E82 /* Coins */ = {
 			isa = PBXGroup;
 			children = (
+				C64067BBD97ADED60D74144D /* Info.plist */,
 				073032A7BAF3EE9058C4594A /* App */,
 				583146B786F67ED82C995451 /* Documents */,
 				FFD0FC286F3FDEDB720D1CDF /* Engine */,
@@ -268,7 +270,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.1;
+				SWIFT_VERSION = 5.10;
 			};
 			name = Debug;
 		};
@@ -290,21 +292,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_TESTABILITY = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Coins;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
-					UIInterfaceOrientationPortrait,
-					UIInterfaceOrientationPortraitUpsideDown,
-					UIInterfaceOrientationLandscapeLeft,
-					UIInterfaceOrientationLandscapeRight,
-				);
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = (
-					UIInterfaceOrientationPortrait,
-					UIInterfaceOrientationLandscapeLeft,
-					UIInterfaceOrientationLandscapeRight,
-				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Coins/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.odile.coins;
@@ -319,21 +308,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_TESTABILITY = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Coins;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
-					UIInterfaceOrientationPortrait,
-					UIInterfaceOrientationPortraitUpsideDown,
-					UIInterfaceOrientationLandscapeLeft,
-					UIInterfaceOrientationLandscapeRight,
-				);
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = (
-					UIInterfaceOrientationPortrait,
-					UIInterfaceOrientationLandscapeLeft,
-					UIInterfaceOrientationLandscapeRight,
-				);
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Coins/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.odile.coins;
@@ -349,7 +325,7 @@
 				DEVELOPMENT_TEAM = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.1;
+				SWIFT_VERSION = 5.10;
 			};
 			name = Release;
 		};

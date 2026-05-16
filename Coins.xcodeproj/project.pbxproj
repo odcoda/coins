@@ -1,0 +1,401 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02E994BCF262FEE48FB61B8D /* GameMasterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D352D33300E37F42EACA384A /* GameMasterView.swift */; };
+		19B0EA2318A1A17729581707 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665CED7B1273ACB1E0DD49AD /* ContentView.swift */; };
+		3A58F46F93F8B3C15A53DB27 /* GameModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760739624DF9D0E5028AE474 /* GameModels.swift */; };
+		564744D91FA37B0584724AC4 /* GameSnapshotDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62F53547554018EA9D46A2D9 /* GameSnapshotDocument.swift */; };
+		5B841E45DB1B10EBCC05C9D2 /* CoinTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF6B20EA9F87633847585646 /* CoinTheme.swift */; };
+		7736F318F444783DBB34859A /* RewardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 364B521664D721D9B22A15A3 /* RewardEngine.swift */; };
+		831B1549948F19C9C605EA4E /* GameStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE8280F0147638D138F17B18 /* GameStore.swift */; };
+		8E68490850C875DA90B8859A /* RewardEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D58DC7798748650C4528629 /* RewardEngineTests.swift */; };
+		B076C64A80F46554A5F5B44A /* SpeechCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD8AA87EFA25D9ECBDD32B2 /* SpeechCoordinator.swift */; };
+		C0B3D16D489FC5308271BC6B /* CoinsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7938D1D5DA6D10835DE7AF0E /* CoinsApp.swift */; };
+		E5B13C1D83F726DFB2005824 /* CoinBurstView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1058F5A26FA4C3A455B87DB9 /* CoinBurstView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		20787EDD9D36109B31C1005D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1E4A1CB66327EFFF88AD53B1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0451FDD1F80BEAB2F1C34137;
+			remoteInfo = Coins;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		1058F5A26FA4C3A455B87DB9 /* CoinBurstView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinBurstView.swift; sourceTree = "<group>"; };
+		275A00EACE2A6B92F1F7D975 /* Coins.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Coins.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		364B521664D721D9B22A15A3 /* RewardEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardEngine.swift; sourceTree = "<group>"; };
+		3AD8AA87EFA25D9ECBDD32B2 /* SpeechCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechCoordinator.swift; sourceTree = "<group>"; };
+		62F53547554018EA9D46A2D9 /* GameSnapshotDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSnapshotDocument.swift; sourceTree = "<group>"; };
+		665CED7B1273ACB1E0DD49AD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		6D58DC7798748650C4528629 /* RewardEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardEngineTests.swift; sourceTree = "<group>"; };
+		760739624DF9D0E5028AE474 /* GameModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameModels.swift; sourceTree = "<group>"; };
+		7938D1D5DA6D10835DE7AF0E /* CoinsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinsApp.swift; sourceTree = "<group>"; };
+		AF6B20EA9F87633847585646 /* CoinTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTheme.swift; sourceTree = "<group>"; };
+		D352D33300E37F42EACA384A /* GameMasterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameMasterView.swift; sourceTree = "<group>"; };
+		ECE598662076047185DC54D9 /* CoinsTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CoinsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FE8280F0147638D138F17B18 /* GameStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameStore.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		05E1E0B5ED3E5CAD632725C7 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				3AD8AA87EFA25D9ECBDD32B2 /* SpeechCoordinator.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		073032A7BAF3EE9058C4594A /* App */ = {
+			isa = PBXGroup;
+			children = (
+				7938D1D5DA6D10835DE7AF0E /* CoinsApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		220247F2FD0CE80E03876E82 /* Coins */ = {
+			isa = PBXGroup;
+			children = (
+				073032A7BAF3EE9058C4594A /* App */,
+				583146B786F67ED82C995451 /* Documents */,
+				FFD0FC286F3FDEDB720D1CDF /* Engine */,
+				59B104A749C26887DC1CF822 /* Models */,
+				F1F2FBFA19672E43A1E93D1F /* Store */,
+				05E1E0B5ED3E5CAD632725C7 /* Utilities */,
+				E62A5EF4DACFA169C7613F5A /* Views */,
+			);
+			path = Coins;
+			sourceTree = "<group>";
+		};
+		583146B786F67ED82C995451 /* Documents */ = {
+			isa = PBXGroup;
+			children = (
+				62F53547554018EA9D46A2D9 /* GameSnapshotDocument.swift */,
+			);
+			path = Documents;
+			sourceTree = "<group>";
+		};
+		59B104A749C26887DC1CF822 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				760739624DF9D0E5028AE474 /* GameModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		658553076A2527121AAD1D10 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				275A00EACE2A6B92F1F7D975 /* Coins.app */,
+				ECE598662076047185DC54D9 /* CoinsTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		795443313955738872D06B33 /* CoinsTests */ = {
+			isa = PBXGroup;
+			children = (
+				6D58DC7798748650C4528629 /* RewardEngineTests.swift */,
+			);
+			path = CoinsTests;
+			sourceTree = "<group>";
+		};
+		E62A5EF4DACFA169C7613F5A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1058F5A26FA4C3A455B87DB9 /* CoinBurstView.swift */,
+				AF6B20EA9F87633847585646 /* CoinTheme.swift */,
+				665CED7B1273ACB1E0DD49AD /* ContentView.swift */,
+				D352D33300E37F42EACA384A /* GameMasterView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		EA3F7B175EBC213761A57769 = {
+			isa = PBXGroup;
+			children = (
+				220247F2FD0CE80E03876E82 /* Coins */,
+				795443313955738872D06B33 /* CoinsTests */,
+				658553076A2527121AAD1D10 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F1F2FBFA19672E43A1E93D1F /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				FE8280F0147638D138F17B18 /* GameStore.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		FFD0FC286F3FDEDB720D1CDF /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				364B521664D721D9B22A15A3 /* RewardEngine.swift */,
+			);
+			path = Engine;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0451FDD1F80BEAB2F1C34137 /* Coins */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4AF9211B24329703C7888F4E /* Build configuration list for PBXNativeTarget "Coins" */;
+			buildPhases = (
+				7569AA8B784DBE782D1FB5F1 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Coins;
+			packageProductDependencies = (
+			);
+			productName = Coins;
+			productReference = 275A00EACE2A6B92F1F7D975 /* Coins.app */;
+			productType = "com.apple.product-type.application";
+		};
+		5C03D824AD08205E418EB52C /* CoinsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A01E72D33236FE847AFD8630 /* Build configuration list for PBXNativeTarget "CoinsTests" */;
+			buildPhases = (
+				A5C7A9A0AF993E44A712B29B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				51A9F60BBB1475782142A98B /* PBXTargetDependency */,
+			);
+			name = CoinsTests;
+			packageProductDependencies = (
+			);
+			productName = CoinsTests;
+			productReference = ECE598662076047185DC54D9 /* CoinsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1E4A1CB66327EFFF88AD53B1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					0451FDD1F80BEAB2F1C34137 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					5C03D824AD08205E418EB52C = {
+						DevelopmentTeam = "";
+					};
+				};
+			};
+			buildConfigurationList = CA9F8F73526DF85AE0D5037F /* Build configuration list for PBXProject "Coins" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = EA3F7B175EBC213761A57769;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 60;
+			productRefGroup = 658553076A2527121AAD1D10 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0451FDD1F80BEAB2F1C34137 /* Coins */,
+				5C03D824AD08205E418EB52C /* CoinsTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7569AA8B784DBE782D1FB5F1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E5B13C1D83F726DFB2005824 /* CoinBurstView.swift in Sources */,
+				5B841E45DB1B10EBCC05C9D2 /* CoinTheme.swift in Sources */,
+				C0B3D16D489FC5308271BC6B /* CoinsApp.swift in Sources */,
+				19B0EA2318A1A17729581707 /* ContentView.swift in Sources */,
+				02E994BCF262FEE48FB61B8D /* GameMasterView.swift in Sources */,
+				3A58F46F93F8B3C15A53DB27 /* GameModels.swift in Sources */,
+				564744D91FA37B0584724AC4 /* GameSnapshotDocument.swift in Sources */,
+				831B1549948F19C9C605EA4E /* GameStore.swift in Sources */,
+				7736F318F444783DBB34859A /* RewardEngine.swift in Sources */,
+				B076C64A80F46554A5F5B44A /* SpeechCoordinator.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A5C7A9A0AF993E44A712B29B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8E68490850C875DA90B8859A /* RewardEngineTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		51A9F60BBB1475782142A98B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0451FDD1F80BEAB2F1C34137 /* Coins */;
+			targetProxy = 20787EDD9D36109B31C1005D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		018A71D2FE6871095B3668DA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_TESTABILITY = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.1;
+			};
+			name = Debug;
+		};
+		25BCE018543EFEA2D5D3FA51 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odile.coins.tests;
+				PRODUCT_NAME = CoinsTests;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Coins.app/Coins";
+			};
+			name = Release;
+		};
+		2B995C5A7C96667ADAE654B8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Coins;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
+					UIInterfaceOrientationPortrait,
+					UIInterfaceOrientationPortraitUpsideDown,
+					UIInterfaceOrientationLandscapeLeft,
+					UIInterfaceOrientationLandscapeRight,
+				);
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = (
+					UIInterfaceOrientationPortrait,
+					UIInterfaceOrientationLandscapeLeft,
+					UIInterfaceOrientationLandscapeRight,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odile.coins;
+				PRODUCT_NAME = Coins;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		3E16B22AB1C3ED97A903EC42 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Coins;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = (
+					UIInterfaceOrientationPortrait,
+					UIInterfaceOrientationPortraitUpsideDown,
+					UIInterfaceOrientationLandscapeLeft,
+					UIInterfaceOrientationLandscapeRight,
+				);
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = (
+					UIInterfaceOrientationPortrait,
+					UIInterfaceOrientationLandscapeLeft,
+					UIInterfaceOrientationLandscapeRight,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odile.coins;
+				PRODUCT_NAME = Coins;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		86B23585B7E6B819476E209F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				DEVELOPMENT_TEAM = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.1;
+			};
+			name = Release;
+		};
+		F8C6168469CC631ADE841F51 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odile.coins.tests;
+				PRODUCT_NAME = CoinsTests;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Coins.app/Coins";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4AF9211B24329703C7888F4E /* Build configuration list for PBXNativeTarget "Coins" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3E16B22AB1C3ED97A903EC42 /* Debug */,
+				2B995C5A7C96667ADAE654B8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A01E72D33236FE847AFD8630 /* Build configuration list for PBXNativeTarget "CoinsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F8C6168469CC631ADE841F51 /* Debug */,
+				25BCE018543EFEA2D5D3FA51 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CA9F8F73526DF85AE0D5037F /* Build configuration list for PBXProject "Coins" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				018A71D2FE6871095B3668DA /* Debug */,
+				86B23585B7E6B819476E209F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1E4A1CB66327EFFF88AD53B1 /* Project object */;
+}

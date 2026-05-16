@@ -54,8 +54,8 @@ final class GameStore: ObservableObject {
         }
     }
 
-    func remainingLockout(for activity: Activity) -> Int {
-        Int(ceil(RewardEngine.remainingLockout(for: activity, snapshot: snapshot)))
+    func remainingLockout(for activity: Activity, at date: Date = .now) -> Int {
+        Int(ceil(RewardEngine.remainingLockout(for: activity, snapshot: snapshot, now: date)))
     }
 
     func progress(for activity: Activity) -> ActivityProgress {
@@ -124,4 +124,3 @@ final class GameStore: ObservableObject {
         }
     }
 }
-

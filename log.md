@@ -14,3 +14,11 @@ ran the live iphone 15 simulator tests and fixed combo rewards:
 - reward engine tests pass on ios 17.5 simulator
 Up next:
 - expand the game-master editor and polish animations/audio
+
+## 2026-05-16 main screen polish
+improved the first-run app ergonomics:
+- lockout timers refresh every second on the player screen
+- connected game master through the top-right gear button
+- expanded the readme with repo and app behavior notes
+Up next:
+- make game-master activity editing more complete

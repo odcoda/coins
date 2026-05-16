@@ -3,43 +3,57 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var store: GameStore
     @State private var isShowingMaster = false
+    @State private var currentDate = Date.now
 
     private var style: ThemeStyle {
         themeStyle(for: store.snapshot.config.theme)
     }
 
     var body: some View {
-        ZStack {
-            FloatingCoinsBackground(style: style)
+        NavigationStack {
+            ZStack {
+                FloatingCoinsBackground(style: style)
 
-            ScrollView {
-                VStack(spacing: 18) {
-                    headerCard
+                ScrollView {
+                    VStack(spacing: 18) {
+                        headerCard
 
-                    if let latestResult = store.latestResult {
-                        resultBanner(for: latestResult)
+                        if let latestResult = store.latestResult {
+                            resultBanner(for: latestResult)
+                        }
+
+                        activitiesSection
+                        progressSection
+                        achievementsSection
+                        ledgerSection
+                        footerSection
                     }
-
-                    activitiesSection
-                    progressSection
-                    achievementsSection
-                    ledgerSection
-                    footerSection
+                    .padding(20)
                 }
-                .padding(20)
+            }
+            .navigationTitle("Coins")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingMaster = true
+                    } label: {
+                        Label("Game Master", systemImage: "gearshape.fill")
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+            .task {
+                currentDate = .now
+                while !Task.isCancelled {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    currentDate = .now
+                }
             }
         }
         .sheet(isPresented: $isShowingMaster) {
             GameMasterView()
                 .environmentObject(store)
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Master") {
-                    isShowingMaster = true
-                }
-                .fontWeight(.semibold)
-            }
         }
     }
 
@@ -118,20 +132,26 @@ struct ContentView: View {
                 .font(.title2.weight(.bold))
 
             ForEach(store.activities) { activity in
-                Button {
-                    store.complete(activity)
-                } label: {
-                    ActivityCard(
-                        activity: activity,
-                        progress: store.progress(for: activity),
-                        remainingLockout: store.remainingLockout(for: activity),
-                        style: style
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(store.remainingLockout(for: activity) > 0)
+                activityRow(for: activity)
             }
         }
+    }
+
+    private func activityRow(for activity: Activity) -> some View {
+        let remainingLockout = store.remainingLockout(for: activity, at: currentDate)
+
+        return Button {
+            store.complete(activity)
+        } label: {
+            ActivityCard(
+                activity: activity,
+                progress: store.progress(for: activity),
+                remainingLockout: remainingLockout,
+                style: style
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(remainingLockout > 0)
     }
 
     private var progressSection: some View {
@@ -307,4 +327,3 @@ private struct ActivityCard: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
-

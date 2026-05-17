@@ -16,6 +16,18 @@ The exact reward structure should be configurable, but here are some ideas for k
 
 All the actual numbers involved, as well as what activities they describe, the streaks we want available, and the probability distributions for each of the random things above. The game master mode configures this.
 
+The game master to change the number of activites, as well as their
+text -- there should be buttons to add and remove activities
+
+The streaks should be configurable -- the game master should be able to
+add/remove/configure one or more achievable streaks. Each streak which
+consists of some text + reward and (a) a set of activities which count
+toward continuing that streak (b) a required frequency (daily, weekly, etc)
+(c) a minimum streak length to get the reward (d) an (optional) extra reward
+to accumulate each time the streak gets longer (e.g. if length is 3 weeks,
+frequency is weekly, reward is +3 coins after the 3 week minimum, then an
+extra of +1 means the player getts +4 after 4 weeks, +5 after 5 weeks, etc)
+
 Talking: since this is being made for kids as well as adults, there should be a mode where all the text that shows up in activities, achievements, etc is read aloud.
 
 Lockout: the user shouldn't be able to spam completions. There's a configurable lockout after they tap each thing.

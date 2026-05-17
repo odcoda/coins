@@ -13,26 +13,40 @@ world work; it gives a configurable reward loop around a trusted completion tap.
 - Same-day combo bonuses and day-over-day streak bonuses
 - Surprise treasure chests gated by streak/completion thresholds
 - Achievement unlocks
-- Piggy bank balance plus cash-out tracking
+- Always-visible coin balance with a reward fly-up animation
+- Separate piggy bank page with streak and cash-out tracking
+- Separate tracking page with achievements, recent rewards, and reward-history charts
 - Password-gated game-master panel
 - JSON export/import of full app state
 
 ## App Flow
 
-The main screen is the player view. It shows the piggy bank balance, daily
-streak, activity cards, unlocked achievements, recent reward ledger, and cash-out
-control. Tapping an activity awards its structured coin reward, then checks for
-same-day combo bonuses, daily streak bonuses, surprise treasure chests, and newly
-unlocked achievements.
+The player shell has a persistent top bar with the current coin balance. Swipe
+right from the left edge, or use the top-left sidebar button, to reveal the
+hidden navigation drawer for Main, Piggy Bank, Tracking, and Game Master.
+
+The Main page is the activity loop. Tapping an activity awards its structured
+coin reward, then checks for same-day combo bonuses, daily streak bonuses,
+surprise treasure chests, and newly unlocked achievements. Positive rewards
+briefly show a centered coin message, then collapse toward the top balance while
+the balance ticks upward.
 
 Activity cards lock after a completion. The countdown refreshes every second on
 the main screen, and a locked activity cannot be tapped again until the timer
 expires.
 
-Use the gear button in the top-right navigation bar to open Game Master. The
-seeded password is `1234`. Game Master currently supports speech mode,
-activity reward/lockout edits, treasure chest tuning, balance adjustments, JSON
-import/export, seed reset, and changing the game-master password.
+The Piggy Bank page shows the larger balance context, daily streak, cashed-out
+dollars, pending cash-out value, and the cash-out control.
+
+The Tracking page shows today/lifetime/unlocked stats, unlocked achievements,
+recent reward ledger entries, a rewards-by-day bar chart, and a cumulative coins
+line chart. These charts are built from the reward ledger, which records the
+timestamp, coin delta, balance, and reward kind for each event.
+
+Game Master is opened from the drawer. The seeded password is `1234`. Game
+Master currently supports speech mode, activity reward/lockout edits, treasure
+chest tuning, balance adjustments, JSON import/export, seed reset, and changing
+the game-master password.
 
 Cash Out does not remove coins from the piggy bank. It records how many new coins
 have been converted to earned dollars since the last cash-out, using the

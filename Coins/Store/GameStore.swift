@@ -38,7 +38,8 @@ final class GameStore: ObservableObject {
         achievements.filter { snapshot.state.unlockedAchievementIDs.contains($0.id) }
     }
 
-    func complete(_ activity: Activity) {
+    @discardableResult
+    func complete(_ activity: Activity) -> CompletionResult {
         var updated = snapshot
         let result = RewardEngine.complete(activityID: activity.id, snapshot: &updated)
         snapshot = updated
@@ -52,6 +53,7 @@ final class GameStore: ObservableObject {
         if snapshot.config.speechEnabled {
             speechCoordinator.speak(result.speechText)
         }
+        return result
     }
 
     func remainingLockout(for activity: Activity, at date: Date = .now) -> Int {

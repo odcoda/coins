@@ -3,6 +3,7 @@ import SwiftUI
 struct GameMasterView: View {
     @EnvironmentObject private var store: GameStore
     @Environment(\.dismiss) private var dismiss
+    var showsCloseButton = true
 
     @State private var password = ""
     @State private var isUnlocked = false
@@ -14,52 +15,60 @@ struct GameMasterView: View {
     @State private var importError: String?
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isUnlocked {
-                    editor
-                } else {
-                    lockedView
-                }
-            }
-            .navigationTitle("Game Master")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") {
-                        dismiss()
+        if showsCloseButton {
+            NavigationStack {
+                content
+                    .navigationTitle("Game Master")
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Close") {
+                                dismiss()
+                            }
+                        }
                     }
-                }
             }
-            .onAppear {
-                draftConfig = store.snapshot.config
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
+        Group {
+            if isUnlocked {
+                editor
+            } else {
+                lockedView
             }
-            .fileExporter(
-                isPresented: $isExporting,
-                document: exportDocument,
-                contentType: .json,
-                defaultFilename: "coins-snapshot"
-            ) { _ in }
-            .fileImporter(
-                isPresented: $isImporting,
-                allowedContentTypes: [.json]
-            ) { result in
-                do {
-                    let url = try result.get()
-                    let data = try Data(contentsOf: url)
-                    let decoder = JSONDecoder()
-                    decoder.dateDecodingStrategy = .iso8601
-                    let snapshot = try decoder.decode(GameSnapshot.self, from: data)
-                    store.importSnapshot(snapshot)
-                    draftConfig = snapshot.config
-                } catch {
-                    importError = error.localizedDescription
-                }
+        }
+        .onAppear {
+            draftConfig = store.snapshot.config
+        }
+        .fileExporter(
+            isPresented: $isExporting,
+            document: exportDocument,
+            contentType: .json,
+            defaultFilename: "coins-snapshot"
+        ) { _ in }
+        .fileImporter(
+            isPresented: $isImporting,
+            allowedContentTypes: [.json]
+        ) { result in
+            do {
+                let url = try result.get()
+                let data = try Data(contentsOf: url)
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                let snapshot = try decoder.decode(GameSnapshot.self, from: data)
+                store.importSnapshot(snapshot)
+                draftConfig = snapshot.config
+            } catch {
+                importError = error.localizedDescription
             }
-            .alert("Import Failed", isPresented: Binding(get: { importError != nil }, set: { _ in importError = nil })) {
-                Button("OK", role: .cancel) { importError = nil }
-            } message: {
-                Text(importError ?? "")
-            }
+        }
+        .alert("Import Failed", isPresented: Binding(get: { importError != nil }, set: { _ in importError = nil })) {
+            Button("OK", role: .cancel) { importError = nil }
+        } message: {
+            Text(importError ?? "")
         }
     }
 
@@ -180,4 +189,3 @@ struct GameMasterView: View {
         }
     }
 }
-

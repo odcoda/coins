@@ -30,3 +30,12 @@ stabilized simulator launch configuration:
 - verified clean simulator build, install, launch, and tests
 Up next:
 - retry Xcode Run from the UI
+
+## 2026-05-17 game shell polish
+split the player experience into game pages:
+- added persistent top-bar coin balance and reward fly-up animation
+- moved piggy-bank/cash-out and tracking views behind a swipe drawer
+- added daily reward and cumulative coin charts from the ledger
+- verified simulator tests on iphone 15
+Up next:
+- add more game feel with sound and theme-specific reward effects

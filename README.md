@@ -9,6 +9,7 @@ world work; it gives a configurable reward loop around a trusted completion tap.
 ## Current MVP
 
 - SwiftUI iPhone/iPad app
+- Generated app icon in the iOS asset catalog
 - Configurable activities with picker-based rewards and lockouts
 - Same-day combo bonuses and configurable interval-based streak bonuses
 - Surprise treasure chests gated by streak/completion thresholds
@@ -106,3 +107,22 @@ xcodebuild -scheme Coins -showdestinations
 ```
 
 Then substitute an available destination into the test command.
+
+## Install On An iPhone
+
+1. Install Xcode 15.4 or newer, then sign in with an Apple ID under Xcode
+   Settings > Accounts.
+2. If you need a personal bundle id, change `PRODUCT_BUNDLE_IDENTIFIER` in
+   `project.yml` to something unique, then run `./scripts/regenerate_project.sh`.
+3. Open `Coins.xcodeproj` in Xcode.
+4. Select the Coins app target, open Signing & Capabilities, and choose your
+   development team. Xcode should create the provisioning profile.
+5. Plug in the iPhone, trust the Mac on the phone, and enable Developer Mode if
+   iOS asks for it.
+6. Pick the iPhone from Xcode's run destination menu and press Run.
+7. If the phone blocks launch, open Settings > General > VPN & Device Management
+   and trust the developer profile.
+
+Free Apple developer provisioning usually expires after 7 days. A paid Apple
+Developer Program account is the cleaner path for longer-term on-device use or
+TestFlight distribution.

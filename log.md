@@ -64,3 +64,11 @@ cleaned up game-master delete controls:
 - renamed hidden accessibility labels away from "Remove"
 Up next:
 - verify the icon picker flow on device-sized screens
+
+## 2026-05-17 app icon
+generated and installed the first ios app icon:
+- added an app icon asset catalog with iphone/ipad sizes
+- wired XcodeGen to compile AppIcon
+- documented phone install steps
+Up next:
+- try the app on a physical iphone

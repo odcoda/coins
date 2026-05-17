@@ -57,3 +57,10 @@ refined game-master editing controls:
 - verified simulator tests on iphone 15
 Up next:
 - verify the icon picker flow on device-sized screens
+
+## 2026-05-17 trash icon labels
+cleaned up game-master delete controls:
+- kept activity and streak delete buttons icon-only
+- renamed hidden accessibility labels away from "Remove"
+Up next:
+- verify the icon picker flow on device-sized screens

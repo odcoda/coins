@@ -174,7 +174,7 @@ struct GameMasterView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(draftConfig.activities.count <= 1)
-                            .accessibilityLabel("Remove Activity")
+                            .accessibilityLabel("Delete Activity")
                         }
 
                         TextField("Title", text: $activity.title)
@@ -235,7 +235,7 @@ struct GameMasterView: View {
                                     .frame(width: 30, height: 30)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("Remove Streak")
+                            .accessibilityLabel("Delete Streak")
                         }
 
                         TextField("Streak text", text: $streak.title)

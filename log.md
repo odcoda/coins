@@ -39,3 +39,12 @@ split the player experience into game pages:
 - verified simulator tests on iphone 15
 Up next:
 - add more game feel with sound and theme-specific reward effects
+
+## 2026-05-17 game-master configurability
+expanded reward configuration:
+- changed activity rewards and lockouts to pickers
+- added activity add/remove controls
+- added configurable activity-scoped streaks with frequency and growing rewards
+- verified simulator tests on iphone 15
+Up next:
+- polish game-master editing ergonomics on small screens

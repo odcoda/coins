@@ -14,7 +14,7 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertEqual(snapshot.state.suspiciousTapCount, 1)
     }
 
-    func testComboAndDailyStreakRewardsStack() {
+    func testComboAndConfiguredDailyStreakRewardsStack() {
         var snapshot = GameSnapshot.seed
         let calendar = Calendar(identifier: .gregorian)
         let dayOne = Date(timeIntervalSince1970: 1_700_000_000)
@@ -29,6 +29,65 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertEqual(snapshot.state.dailyStreak, 3)
         XCTAssertTrue(result.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
         XCTAssertTrue(snapshot.state.ledger.contains(where: { $0.kind == .combo }))
+    }
+
+    func testWeeklyStreakExtraRewardGrowsAfterMinimum() {
+        var snapshot = GameSnapshot.seed
+        snapshot.config.treasureChest.isEnabled = false
+        snapshot.config.streaks = [
+            StreakDefinition(
+                id: "weekly-practice",
+                title: "Weekly Practice",
+                detail: "Practice every week.",
+                activityIDs: ["warmup"],
+                frequency: .weekly,
+                minimumLength: 3,
+                rewardCoins: 3,
+                extraRewardCoins: 1
+            )
+        ]
+
+        let calendar = Calendar(identifier: .gregorian)
+        let weekOne = Date(timeIntervalSince1970: 1_700_000_000)
+        let weekTwo = weekOne.addingTimeInterval(7 * 86_400)
+        let weekThree = weekTwo.addingTimeInterval(7 * 86_400)
+        let weekFour = weekThree.addingTimeInterval(7 * 86_400)
+
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekOne, roll: 1, calendar: calendar)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekTwo, roll: 1, calendar: calendar)
+        let third = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekThree, roll: 1, calendar: calendar)
+        let fourth = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekFour, roll: 1, calendar: calendar)
+
+        XCTAssertTrue(third.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 3 }))
+        XCTAssertTrue(fourth.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
+        XCTAssertEqual(snapshot.state.streakProgress["weekly-practice"]?.currentLength, 4)
+    }
+
+    func testStreakIgnoresActivitiesOutsideConfiguredSet() {
+        var snapshot = GameSnapshot.seed
+        snapshot.config.treasureChest.isEnabled = false
+        snapshot.config.streaks = [
+            StreakDefinition(
+                id: "warmup-only",
+                title: "Warm-Up Only",
+                detail: "Only warm-ups count.",
+                activityIDs: ["warmup"],
+                frequency: .daily,
+                minimumLength: 1,
+                rewardCoins: 2,
+                extraRewardCoins: 0
+            )
+        ]
+
+        let result = RewardEngine.complete(
+            activityID: "song-practice",
+            snapshot: &snapshot,
+            now: Date(timeIntervalSince1970: 1_700_000_000),
+            roll: 1
+        )
+
+        XCTAssertFalse(result.events.contains(where: { $0.kind == .dailyStreak }))
+        XCTAssertNil(snapshot.state.streakProgress["warmup-only"])
     }
 
     func testCashOutUsesWatermarkInsteadOfReducingBalance() {

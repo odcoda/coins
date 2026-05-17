@@ -71,18 +71,15 @@ enum RewardEngine {
             events.append(combo)
         }
 
-        if firstCompletionToday {
-            for milestone in snapshot.config.dailyStreakMilestones where snapshot.state.dailyStreak == milestone.days {
-                let streak = RewardEvent(
-                    id: UUID(),
-                    title: milestone.title,
-                    detail: "Day \(milestone.days) in a row.",
-                    coins: milestone.bonusCoins,
-                    kind: .dailyStreak
-                )
-                apply(event: streak, to: &snapshot.state, now: now)
-                events.append(streak)
-            }
+        let streaks = updateConfiguredStreaks(
+            snapshot: &snapshot,
+            activityID: activityID,
+            now: now,
+            calendar: calendar
+        )
+        for streak in streaks {
+            apply(event: streak, to: &snapshot.state, now: now)
+            events.append(streak)
         }
 
         if let chest = treasureChestEvent(snapshot: snapshot, now: now, roll: roll, chestCoins: chestCoins) {
@@ -195,6 +192,62 @@ enum RewardEngine {
         )
     }
 
+    private static func updateConfiguredStreaks(
+        snapshot: inout GameSnapshot,
+        activityID: String,
+        now: Date,
+        calendar: Calendar
+    ) -> [RewardEvent] {
+        var events: [RewardEvent] = []
+
+        for streak in snapshot.config.streaks where streak.activityIDs.contains(activityID) {
+            let periodKey = periodKey(for: now, frequency: streak.frequency, calendar: calendar)
+            var progress = snapshot.state.streakProgress[streak.id] ?? StreakProgress()
+
+            guard progress.lastCompletedPeriodKey != periodKey else {
+                continue
+            }
+
+            if let lastKey = progress.lastCompletedPeriodKey {
+                let gap = periodDistance(
+                    from: lastKey,
+                    to: periodKey,
+                    frequency: streak.frequency,
+                    calendar: calendar
+                )
+                progress.currentLength = gap == 1 ? progress.currentLength + 1 : 1
+            } else {
+                progress.currentLength = 1
+            }
+
+            progress.lastCompletedPeriodKey = periodKey
+            snapshot.state.streakProgress[streak.id] = progress
+
+            guard progress.currentLength >= max(streak.minimumLength, 1) else {
+                continue
+            }
+
+            let extraPeriods = max(progress.currentLength - max(streak.minimumLength, 1), 0)
+            let coins = max(streak.rewardCoins, 0) + extraPeriods * max(streak.extraRewardCoins, 0)
+            let unit = streak.frequency.unitName
+            let pluralUnit = progress.currentLength == 1 ? unit : "\(unit)s"
+            let detail = streak.detail.isEmpty
+                ? "\(progress.currentLength) \(pluralUnit) in a row."
+                : "\(streak.detail) \(progress.currentLength) \(pluralUnit) in a row."
+            events.append(
+                RewardEvent(
+                    id: UUID(),
+                    title: streak.title,
+                    detail: detail,
+                    coins: coins,
+                    kind: .dailyStreak
+                )
+            )
+        }
+
+        return events
+    }
+
     private static func unlockAchievements(
         snapshot: inout GameSnapshot,
         activityID: String,
@@ -285,6 +338,46 @@ enum RewardEngine {
             return 0
         }
         return calendar.dateComponents([.day], from: lhsDate, to: rhsDate).day ?? 0
+    }
+
+    private static func periodKey(for date: Date, frequency: StreakFrequency, calendar: Calendar) -> String {
+        dayKey(for: periodStart(for: date, frequency: frequency, calendar: calendar), calendar: calendar)
+    }
+
+    private static func periodStart(for date: Date, frequency: StreakFrequency, calendar: Calendar) -> Date {
+        switch frequency {
+        case .daily:
+            return calendar.startOfDay(for: date)
+        case .weekly:
+            return calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
+        case .monthly:
+            let components = calendar.dateComponents([.year, .month], from: date)
+            return calendar.date(from: components) ?? calendar.startOfDay(for: date)
+        }
+    }
+
+    private static func periodDistance(
+        from lhs: String,
+        to rhs: String,
+        frequency: StreakFrequency,
+        calendar: Calendar
+    ) -> Int {
+        guard let lhsDate = dayFormatter.date(from: lhs),
+              let rhsDate = dayFormatter.date(from: rhs) else {
+            return 0
+        }
+
+        let component: Calendar.Component
+        switch frequency {
+        case .daily:
+            component = .day
+        case .weekly:
+            component = .weekOfYear
+        case .monthly:
+            component = .month
+        }
+
+        return calendar.dateComponents([component], from: lhsDate, to: rhsDate).value(for: component) ?? 0
     }
 
     private static let dayFormatter: DateFormatter = {

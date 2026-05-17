@@ -29,6 +29,47 @@ struct DailyStreakMilestone: Identifiable, Codable, Hashable {
     var title: String
 }
 
+enum StreakFrequency: String, Codable, CaseIterable, Identifiable {
+    case daily
+    case weekly
+    case monthly
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .daily:
+            return "Daily"
+        case .weekly:
+            return "Weekly"
+        case .monthly:
+            return "Monthly"
+        }
+    }
+
+    var unitName: String {
+        switch self {
+        case .daily:
+            return "day"
+        case .weekly:
+            return "week"
+        case .monthly:
+            return "month"
+        }
+    }
+}
+
+struct StreakDefinition: Identifiable, Codable, Hashable {
+    var id: String
+    var title: String
+    var detail: String
+    var activityIDs: [String]
+    var frequency: StreakFrequency
+    var minimumLength: Int
+    var rewardCoins: Int
+    var extraRewardCoins: Int
+}
+
 enum AchievementMetric: String, Codable, CaseIterable {
     case totalCompletions
     case lifetimeCoins
@@ -65,10 +106,32 @@ struct GameConfig: Codable, Hashable {
     var masterPassword: String
     var activities: [Activity]
     var comboMilestones: [ComboMilestone]
-    var dailyStreakMilestones: [DailyStreakMilestone]
+    var streaks: [StreakDefinition]
     var achievements: [AchievementDefinition]
     var treasureChest: TreasureChestConfig
     var economy: EconomyConfig
+
+    init(
+        theme: ThemeID,
+        speechEnabled: Bool,
+        masterPassword: String,
+        activities: [Activity],
+        comboMilestones: [ComboMilestone],
+        streaks: [StreakDefinition],
+        achievements: [AchievementDefinition],
+        treasureChest: TreasureChestConfig,
+        economy: EconomyConfig
+    ) {
+        self.theme = theme
+        self.speechEnabled = speechEnabled
+        self.masterPassword = masterPassword
+        self.activities = activities
+        self.comboMilestones = comboMilestones
+        self.streaks = streaks
+        self.achievements = achievements
+        self.treasureChest = treasureChest
+        self.economy = economy
+    }
 }
 
 enum RewardKind: String, Codable {
@@ -106,6 +169,11 @@ struct ActivityProgress: Codable, Hashable {
     var lastCompletedDayKey: String?
 }
 
+struct StreakProgress: Codable, Hashable {
+    var currentLength: Int = 0
+    var lastCompletedPeriodKey: String?
+}
+
 struct GameState: Codable, Hashable {
     var coinBalance: Int = 0
     var lifetimeCoins: Int = 0
@@ -117,8 +185,39 @@ struct GameState: Codable, Hashable {
     var cashedOutCoinsWatermark: Int = 0
     var cashedOutDollars: Double = 0
     var activityProgress: [String: ActivityProgress] = [:]
+    var streakProgress: [String: StreakProgress] = [:]
     var unlockedAchievementIDs: Set<String> = []
     var ledger: [LedgerEntry] = []
+
+    init(
+        coinBalance: Int = 0,
+        lifetimeCoins: Int = 0,
+        dailyStreak: Int = 0,
+        dailyCompletionCount: Int = 0,
+        currentDayKey: String? = nil,
+        lastActiveDayKey: String? = nil,
+        suspiciousTapCount: Int = 0,
+        cashedOutCoinsWatermark: Int = 0,
+        cashedOutDollars: Double = 0,
+        activityProgress: [String: ActivityProgress] = [:],
+        streakProgress: [String: StreakProgress] = [:],
+        unlockedAchievementIDs: Set<String> = [],
+        ledger: [LedgerEntry] = []
+    ) {
+        self.coinBalance = coinBalance
+        self.lifetimeCoins = lifetimeCoins
+        self.dailyStreak = dailyStreak
+        self.dailyCompletionCount = dailyCompletionCount
+        self.currentDayKey = currentDayKey
+        self.lastActiveDayKey = lastActiveDayKey
+        self.suspiciousTapCount = suspiciousTapCount
+        self.cashedOutCoinsWatermark = cashedOutCoinsWatermark
+        self.cashedOutDollars = cashedOutDollars
+        self.activityProgress = activityProgress
+        self.streakProgress = streakProgress
+        self.unlockedAchievementIDs = unlockedAchievementIDs
+        self.ledger = ledger
+    }
 }
 
 struct GameSnapshot: Codable, Hashable {
@@ -158,7 +257,7 @@ extension GameSnapshot {
                     title: "Song Practice",
                     detail: "Run one assigned song from start to finish.",
                     baseReward: 2,
-                    lockoutSeconds: 900,
+                    lockoutSeconds: 600,
                     symbol: "music.note"
                 ),
                 Activity(
@@ -174,9 +273,27 @@ extension GameSnapshot {
                 ComboMilestone(id: "combo-2", count: 2, bonusCoins: 1, title: "Quick Double"),
                 ComboMilestone(id: "combo-4", count: 4, bonusCoins: 3, title: "Practice Wave")
             ],
-            dailyStreakMilestones: [
-                DailyStreakMilestone(id: "streak-3", days: 3, bonusCoins: 4, title: "Three-Day Spark"),
-                DailyStreakMilestone(id: "streak-7", days: 7, bonusCoins: 10, title: "Weeklong Shine")
+            streaks: [
+                StreakDefinition(
+                    id: "streak-3",
+                    title: "Three-Day Spark",
+                    detail: "Complete any practice activity three days in a row.",
+                    activityIDs: ["warmup", "song-practice", "sight-reading"],
+                    frequency: .daily,
+                    minimumLength: 3,
+                    rewardCoins: 4,
+                    extraRewardCoins: 0
+                ),
+                StreakDefinition(
+                    id: "streak-7",
+                    title: "Weeklong Shine",
+                    detail: "Complete any practice activity for a full week.",
+                    activityIDs: ["warmup", "song-practice", "sight-reading"],
+                    frequency: .daily,
+                    minimumLength: 7,
+                    rewardCoins: 10,
+                    extraRewardCoins: 0
+                )
             ],
             achievements: [
                 AchievementDefinition(
@@ -221,3 +338,121 @@ extension GameSnapshot {
     )
 }
 
+extension GameConfig {
+    private enum CodingKeys: String, CodingKey {
+        case theme
+        case speechEnabled
+        case masterPassword
+        case activities
+        case comboMilestones
+        case streaks
+        case dailyStreakMilestones
+        case achievements
+        case treasureChest
+        case economy
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let activities = try container.decodeIfPresent([Activity].self, forKey: .activities) ?? []
+        let streaks = try container.decodeIfPresent([StreakDefinition].self, forKey: .streaks)
+            ?? (try container.decodeIfPresent([DailyStreakMilestone].self, forKey: .dailyStreakMilestones) ?? []).map { milestone in
+                StreakDefinition(
+                    id: milestone.id,
+                    title: milestone.title,
+                    detail: "Complete a qualifying activity \(milestone.days) days in a row.",
+                    activityIDs: activities.map(\.id),
+                    frequency: .daily,
+                    minimumLength: milestone.days,
+                    rewardCoins: milestone.bonusCoins,
+                    extraRewardCoins: 0
+                )
+            }
+
+        self.init(
+            theme: try container.decodeIfPresent(ThemeID.self, forKey: .theme) ?? .coinGarden,
+            speechEnabled: try container.decodeIfPresent(Bool.self, forKey: .speechEnabled) ?? false,
+            masterPassword: try container.decodeIfPresent(String.self, forKey: .masterPassword) ?? "1234",
+            activities: activities,
+            comboMilestones: try container.decodeIfPresent([ComboMilestone].self, forKey: .comboMilestones) ?? [],
+            streaks: streaks,
+            achievements: try container.decodeIfPresent([AchievementDefinition].self, forKey: .achievements) ?? [],
+            treasureChest: try container.decodeIfPresent(TreasureChestConfig.self, forKey: .treasureChest) ?? TreasureChestConfig(
+                isEnabled: true,
+                minDailyStreak: 2,
+                minDailyCompletions: 2,
+                chance: 0.35,
+                minCoins: 3,
+                maxCoins: 7
+            ),
+            economy: try container.decodeIfPresent(EconomyConfig.self, forKey: .economy) ?? EconomyConfig(coinsPerDollar: 20)
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(theme, forKey: .theme)
+        try container.encode(speechEnabled, forKey: .speechEnabled)
+        try container.encode(masterPassword, forKey: .masterPassword)
+        try container.encode(activities, forKey: .activities)
+        try container.encode(comboMilestones, forKey: .comboMilestones)
+        try container.encode(streaks, forKey: .streaks)
+        try container.encode(achievements, forKey: .achievements)
+        try container.encode(treasureChest, forKey: .treasureChest)
+        try container.encode(economy, forKey: .economy)
+    }
+}
+
+extension GameState {
+    private enum CodingKeys: String, CodingKey {
+        case coinBalance
+        case lifetimeCoins
+        case dailyStreak
+        case dailyCompletionCount
+        case currentDayKey
+        case lastActiveDayKey
+        case suspiciousTapCount
+        case cashedOutCoinsWatermark
+        case cashedOutDollars
+        case activityProgress
+        case streakProgress
+        case unlockedAchievementIDs
+        case ledger
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            coinBalance: try container.decodeIfPresent(Int.self, forKey: .coinBalance) ?? 0,
+            lifetimeCoins: try container.decodeIfPresent(Int.self, forKey: .lifetimeCoins) ?? 0,
+            dailyStreak: try container.decodeIfPresent(Int.self, forKey: .dailyStreak) ?? 0,
+            dailyCompletionCount: try container.decodeIfPresent(Int.self, forKey: .dailyCompletionCount) ?? 0,
+            currentDayKey: try container.decodeIfPresent(String.self, forKey: .currentDayKey),
+            lastActiveDayKey: try container.decodeIfPresent(String.self, forKey: .lastActiveDayKey),
+            suspiciousTapCount: try container.decodeIfPresent(Int.self, forKey: .suspiciousTapCount) ?? 0,
+            cashedOutCoinsWatermark: try container.decodeIfPresent(Int.self, forKey: .cashedOutCoinsWatermark) ?? 0,
+            cashedOutDollars: try container.decodeIfPresent(Double.self, forKey: .cashedOutDollars) ?? 0,
+            activityProgress: try container.decodeIfPresent([String: ActivityProgress].self, forKey: .activityProgress) ?? [:],
+            streakProgress: try container.decodeIfPresent([String: StreakProgress].self, forKey: .streakProgress) ?? [:],
+            unlockedAchievementIDs: try container.decodeIfPresent(Set<String>.self, forKey: .unlockedAchievementIDs) ?? [],
+            ledger: try container.decodeIfPresent([LedgerEntry].self, forKey: .ledger) ?? []
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(coinBalance, forKey: .coinBalance)
+        try container.encode(lifetimeCoins, forKey: .lifetimeCoins)
+        try container.encode(dailyStreak, forKey: .dailyStreak)
+        try container.encode(dailyCompletionCount, forKey: .dailyCompletionCount)
+        try container.encodeIfPresent(currentDayKey, forKey: .currentDayKey)
+        try container.encodeIfPresent(lastActiveDayKey, forKey: .lastActiveDayKey)
+        try container.encode(suspiciousTapCount, forKey: .suspiciousTapCount)
+        try container.encode(cashedOutCoinsWatermark, forKey: .cashedOutCoinsWatermark)
+        try container.encode(cashedOutDollars, forKey: .cashedOutDollars)
+        try container.encode(activityProgress, forKey: .activityProgress)
+        try container.encode(streakProgress, forKey: .streakProgress)
+        try container.encode(unlockedAchievementIDs, forKey: .unlockedAchievementIDs)
+        try container.encode(ledger, forKey: .ledger)
+    }
+}

@@ -14,6 +14,9 @@ struct GameMasterView: View {
     @State private var isImporting = false
     @State private var importError: String?
 
+    private let rewardOptions = Array(0...50)
+    private let lockoutOptions = Array(stride(from: 5, through: 60, by: 5)) + Array(stride(from: 120, through: 600, by: 60))
+
     var body: some View {
         if showsCloseButton {
             NavigationStack {
@@ -121,17 +124,113 @@ struct GameMasterView: View {
             Section("Activities") {
                 ForEach($draftConfig.activities) { $activity in
                     VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Label(activity.title.isEmpty ? "Activity" : activity.title, systemImage: activity.symbol)
+                                .font(.headline)
+                            Spacer()
+                            Button(role: .destructive) {
+                                removeActivity(id: activity.id)
+                            } label: {
+                                Label("Remove", systemImage: "trash")
+                            }
+                            .disabled(draftConfig.activities.count <= 1)
+                        }
+
                         TextField("Title", text: $activity.title)
                         TextField("Detail", text: $activity.detail)
-                        HStack {
-                            Stepper("Reward \(activity.baseReward)", value: $activity.baseReward, in: 1...20)
-                            Stepper("Lockout \(activity.lockoutSeconds)s", value: $activity.lockoutSeconds, in: 30...7200, step: 30)
+
+                        Picker("Reward", selection: $activity.baseReward) {
+                            ForEach(rewardOptions, id: \.self) { reward in
+                                Text("\(reward) \(reward == 1 ? "coin" : "coins")").tag(reward)
+                            }
                         }
-                        Text("Symbol: \(activity.symbol)")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+                        .pickerStyle(.menu)
+
+                        Picker("Lockout", selection: $activity.lockoutSeconds) {
+                            ForEach(lockoutOptions(for: activity.lockoutSeconds), id: \.self) { seconds in
+                                Text(lockoutLabel(seconds)).tag(seconds)
+                            }
+                        }
+                        .pickerStyle(.menu)
                     }
                     .padding(.vertical, 6)
+                }
+
+                Button {
+                    addActivity()
+                } label: {
+                    Label("Add Activity", systemImage: "plus.circle.fill")
+                }
+            }
+
+            Section("Streaks") {
+                if draftConfig.streaks.isEmpty {
+                    Text("No streaks configured.")
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach($draftConfig.streaks) { $streak in
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Label(streak.title.isEmpty ? "Streak" : streak.title, systemImage: "flame.fill")
+                                .font(.headline)
+                            Spacer()
+                            Button(role: .destructive) {
+                                removeStreak(id: streak.id)
+                            } label: {
+                                Label("Remove", systemImage: "trash")
+                            }
+                        }
+
+                        TextField("Streak text", text: $streak.title)
+                        TextField("Reward detail", text: $streak.detail, axis: .vertical)
+                            .lineLimit(2...4)
+
+                        Picker("Frequency", selection: $streak.frequency) {
+                            ForEach(StreakFrequency.allCases) { frequency in
+                                Text(frequency.displayName).tag(frequency)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        Picker("Reward", selection: $streak.rewardCoins) {
+                            ForEach(rewardOptions, id: \.self) { reward in
+                                Text("\(reward) \(reward == 1 ? "coin" : "coins")").tag(reward)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        Stepper(
+                            "Minimum length \(streak.minimumLength)",
+                            value: $streak.minimumLength,
+                            in: 1...60
+                        )
+
+                        Picker("Extra per period", selection: $streak.extraRewardCoins) {
+                            ForEach(rewardOptions, id: \.self) { reward in
+                                Text(reward == 0 ? "None" : "+\(reward)").tag(reward)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Activities that count")
+                                .font(.subheadline.weight(.semibold))
+                            ForEach(draftConfig.activities) { activity in
+                                Toggle(
+                                    activity.title.isEmpty ? "Untitled activity" : activity.title,
+                                    isOn: activityIncludedBinding(for: $streak, activityID: activity.id)
+                                )
+                            }
+                        }
+                    }
+                    .padding(.vertical, 6)
+                }
+
+                Button {
+                    addStreak()
+                } label: {
+                    Label("Add Streak", systemImage: "plus.circle.fill")
                 }
             }
 
@@ -182,10 +281,92 @@ struct GameMasterView: View {
 
             Section {
                 Button("Save Configuration") {
-                    store.apply(config: draftConfig)
+                    store.apply(config: sanitizedConfig())
                 }
                 .fontWeight(.bold)
             }
         }
+    }
+
+    private func addActivity() {
+        draftConfig.activities.append(
+            Activity(
+                id: "activity-\(UUID().uuidString)",
+                title: "New Activity",
+                detail: "Describe the real-world activity.",
+                baseReward: 1,
+                lockoutSeconds: 60,
+                symbol: "checkmark.circle.fill"
+            )
+        )
+    }
+
+    private func removeActivity(id: String) {
+        guard draftConfig.activities.count > 1 else { return }
+        draftConfig.activities.removeAll { $0.id == id }
+        for index in draftConfig.streaks.indices {
+            draftConfig.streaks[index].activityIDs.removeAll { $0 == id }
+        }
+    }
+
+    private func addStreak() {
+        draftConfig.streaks.append(
+            StreakDefinition(
+                id: "streak-\(UUID().uuidString)",
+                title: "New Streak",
+                detail: "Complete a qualifying activity on schedule.",
+                activityIDs: draftConfig.activities.map(\.id),
+                frequency: .daily,
+                minimumLength: 3,
+                rewardCoins: 3,
+                extraRewardCoins: 0
+            )
+        )
+    }
+
+    private func removeStreak(id: String) {
+        draftConfig.streaks.removeAll { $0.id == id }
+    }
+
+    private func activityIncludedBinding(for streak: Binding<StreakDefinition>, activityID: String) -> Binding<Bool> {
+        Binding {
+            streak.wrappedValue.activityIDs.contains(activityID)
+        } set: { isIncluded in
+            var activityIDs = streak.wrappedValue.activityIDs
+            if isIncluded {
+                if !activityIDs.contains(activityID) {
+                    activityIDs.append(activityID)
+                }
+            } else {
+                activityIDs.removeAll { $0 == activityID }
+            }
+            streak.wrappedValue.activityIDs = activityIDs
+        }
+    }
+
+    private func sanitizedConfig() -> GameConfig {
+        var config = draftConfig
+        let validActivityIDs = Set(config.activities.map(\.id))
+        for index in config.streaks.indices {
+            config.streaks[index].minimumLength = max(config.streaks[index].minimumLength, 1)
+            config.streaks[index].rewardCoins = min(max(config.streaks[index].rewardCoins, 0), 50)
+            config.streaks[index].extraRewardCoins = min(max(config.streaks[index].extraRewardCoins, 0), 50)
+            config.streaks[index].activityIDs = config.streaks[index].activityIDs.filter { validActivityIDs.contains($0) }
+        }
+        return config
+    }
+
+    private func lockoutOptions(for currentValue: Int) -> [Int] {
+        Array(Set(lockoutOptions + [currentValue])).sorted()
+    }
+
+    private func lockoutLabel(_ seconds: Int) -> String {
+        if seconds < 60 {
+            return "\(seconds) seconds"
+        }
+        if seconds == 60 {
+            return "1 minute"
+        }
+        return "\(seconds / 60) minutes"
     }
 }

@@ -31,7 +31,14 @@ struct DailyStreakMilestone: Identifiable, Codable, Hashable {
 
 enum StreakFrequency: String, Codable, CaseIterable, Identifiable {
     case daily
+    case every2Days
+    case every3Days
+    case every4Days
+    case every5Days
     case weekly
+    case every2Weeks
+    case every3Weeks
+    case every4Weeks
     case monthly
 
     var id: String { rawValue }
@@ -40,22 +47,55 @@ enum StreakFrequency: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .daily:
             return "Daily"
+        case .every2Days:
+            return "Every 2 Days"
+        case .every3Days:
+            return "Every 3 Days"
+        case .every4Days:
+            return "Every 4 Days"
+        case .every5Days:
+            return "Every 5 Days"
         case .weekly:
             return "Weekly"
+        case .every2Weeks:
+            return "Every 2 Weeks"
+        case .every3Weeks:
+            return "Every 3 Weeks"
+        case .every4Weeks:
+            return "Every 4 Weeks"
         case .monthly:
             return "Monthly"
         }
     }
 
+    var interval: Int {
+        switch self {
+        case .daily, .weekly, .monthly:
+            return 1
+        case .every2Days, .every2Weeks:
+            return 2
+        case .every3Days, .every3Weeks:
+            return 3
+        case .every4Days, .every4Weeks:
+            return 4
+        case .every5Days:
+            return 5
+        }
+    }
+
     var unitName: String {
         switch self {
-        case .daily:
+        case .daily, .every2Days, .every3Days, .every4Days, .every5Days:
             return "day"
-        case .weekly:
+        case .weekly, .every2Weeks, .every3Weeks, .every4Weeks:
             return "week"
         case .monthly:
             return "month"
         }
+    }
+
+    var progressUnitName: String {
+        interval == 1 ? unitName : "\(interval)-\(unitName) period"
     }
 }
 
@@ -68,6 +108,29 @@ struct StreakDefinition: Identifiable, Codable, Hashable {
     var minimumLength: Int
     var rewardCoins: Int
     var extraRewardCoins: Int
+    var symbol: String
+
+    init(
+        id: String,
+        title: String,
+        detail: String,
+        activityIDs: [String],
+        frequency: StreakFrequency,
+        minimumLength: Int,
+        rewardCoins: Int,
+        extraRewardCoins: Int,
+        symbol: String = "flame.fill"
+    ) {
+        self.id = id
+        self.title = title
+        self.detail = detail
+        self.activityIDs = activityIDs
+        self.frequency = frequency
+        self.minimumLength = minimumLength
+        self.rewardCoins = rewardCoins
+        self.extraRewardCoins = extraRewardCoins
+        self.symbol = symbol
+    }
 }
 
 enum AchievementMetric: String, Codable, CaseIterable {
@@ -282,7 +345,8 @@ extension GameSnapshot {
                     frequency: .daily,
                     minimumLength: 3,
                     rewardCoins: 4,
-                    extraRewardCoins: 0
+                    extraRewardCoins: 0,
+                    symbol: "sparkles"
                 ),
                 StreakDefinition(
                     id: "streak-7",
@@ -292,7 +356,8 @@ extension GameSnapshot {
                     frequency: .daily,
                     minimumLength: 7,
                     rewardCoins: 10,
-                    extraRewardCoins: 0
+                    extraRewardCoins: 0,
+                    symbol: "sun.max.fill"
                 )
             ],
             achievements: [
@@ -365,7 +430,8 @@ extension GameConfig {
                     frequency: .daily,
                     minimumLength: milestone.days,
                     rewardCoins: milestone.bonusCoins,
-                    extraRewardCoins: 0
+                    extraRewardCoins: 0,
+                    symbol: "flame.fill"
                 )
             }
 
@@ -400,6 +466,48 @@ extension GameConfig {
         try container.encode(achievements, forKey: .achievements)
         try container.encode(treasureChest, forKey: .treasureChest)
         try container.encode(economy, forKey: .economy)
+    }
+}
+
+extension StreakDefinition {
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case detail
+        case activityIDs
+        case frequency
+        case minimumLength
+        case rewardCoins
+        case extraRewardCoins
+        case symbol
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try container.decode(String.self, forKey: .id),
+            title: try container.decode(String.self, forKey: .title),
+            detail: try container.decode(String.self, forKey: .detail),
+            activityIDs: try container.decode([String].self, forKey: .activityIDs),
+            frequency: try container.decode(StreakFrequency.self, forKey: .frequency),
+            minimumLength: try container.decode(Int.self, forKey: .minimumLength),
+            rewardCoins: try container.decode(Int.self, forKey: .rewardCoins),
+            extraRewardCoins: try container.decode(Int.self, forKey: .extraRewardCoins),
+            symbol: try container.decodeIfPresent(String.self, forKey: .symbol) ?? "flame.fill"
+        )
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(detail, forKey: .detail)
+        try container.encode(activityIDs, forKey: .activityIDs)
+        try container.encode(frequency, forKey: .frequency)
+        try container.encode(minimumLength, forKey: .minimumLength)
+        try container.encode(rewardCoins, forKey: .rewardCoins)
+        try container.encode(extraRewardCoins, forKey: .extraRewardCoins)
+        try container.encode(symbol, forKey: .symbol)
     }
 }
 

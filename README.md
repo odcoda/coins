@@ -10,7 +10,7 @@ world work; it gives a configurable reward loop around a trusted completion tap.
 
 - SwiftUI iPhone/iPad app
 - Configurable activities with picker-based rewards and lockouts
-- Same-day combo bonuses and configurable daily/weekly/monthly streak bonuses
+- Same-day combo bonuses and configurable interval-based streak bonuses
 - Surprise treasure chests gated by streak/completion thresholds
 - Achievement unlocks
 - Always-visible coin balance with a reward fly-up animation
@@ -46,8 +46,9 @@ timestamp, coin delta, balance, and reward kind for each event.
 Game Master is opened from the drawer. The seeded password is `1234`. Game
 Master currently supports speech mode, adding/removing/editing activities,
 picker-based activity reward/lockout edits, configurable activity-scoped
-streaks, treasure chest tuning, balance adjustments, JSON import/export, seed
-reset, and changing the game-master password.
+streaks, icon selection for activities and streaks, treasure chest tuning,
+balance adjustments, JSON import/export, seed reset, and changing the
+game-master password.
 
 Cash Out does not remove coins from the piggy bank. It records how many new coins
 have been converted to earned dollars since the last cash-out, using the
@@ -62,7 +63,8 @@ random rolls.
 - `Activity` gives the known structured reward and has its own lockout.
 - `ComboMilestone` triggers from total completions during the current day.
 - `StreakDefinition` triggers once per configured period for its chosen
-  activities, with optional extra reward growth after the minimum streak length.
+  activities. Periods can be daily, every 2-5 days, weekly, every 2-4 weeks,
+  or monthly, with optional extra reward growth after the minimum streak length.
 - `TreasureChestConfig` gates random bonuses behind streak and daily-completion thresholds.
 - `AchievementDefinition` unlocks one-time bonuses from configured metrics.
 - `LedgerEntry` records all rewards, adjustments, and cash-out events.

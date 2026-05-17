@@ -48,3 +48,12 @@ expanded reward configuration:
 - verified simulator tests on iphone 15
 Up next:
 - polish game-master editing ergonomics on small screens
+
+## 2026-05-17 game-master icon polish
+refined game-master editing controls:
+- added interval streak frequencies for every 2-5 days and every 2-4 weeks
+- changed remove controls to small red trash icons
+- added icon pickers for activities and streaks
+- verified simulator tests on iphone 15
+Up next:
+- verify the icon picker flow on device-sized screens

@@ -13,9 +13,24 @@ struct GameMasterView: View {
     @State private var isExporting = false
     @State private var isImporting = false
     @State private var importError: String?
+    @State private var iconSelection: IconSelection?
 
     private let rewardOptions = Array(0...50)
     private let lockoutOptions = Array(stride(from: 5, through: 60, by: 5)) + Array(stride(from: 120, through: 600, by: 60))
+    private let iconOptions = [
+        IconOption(title: "Leaf", symbol: "leaf.fill"),
+        IconOption(title: "Music", symbol: "music.note"),
+        IconOption(title: "Eye", symbol: "eye.fill"),
+        IconOption(title: "Check", symbol: "checkmark.circle.fill"),
+        IconOption(title: "Flame", symbol: "flame.fill"),
+        IconOption(title: "Sparkles", symbol: "sparkles"),
+        IconOption(title: "Sun", symbol: "sun.max.fill"),
+        IconOption(title: "Star", symbol: "star.fill"),
+        IconOption(title: "Book", symbol: "book.fill"),
+        IconOption(title: "Pencil", symbol: "pencil"),
+        IconOption(title: "Trophy", symbol: "trophy.fill"),
+        IconOption(title: "Target", symbol: "target")
+    ]
 
     var body: some View {
         if showsCloseButton {
@@ -73,6 +88,17 @@ struct GameMasterView: View {
         } message: {
             Text(importError ?? "")
         }
+        .sheet(item: $iconSelection) { selection in
+            IconPickerSheet(
+                title: selection.title,
+                selectedSymbol: currentSymbol(for: selection),
+                options: iconOptions
+            ) { symbol in
+                setIcon(symbol, for: selection)
+                iconSelection = nil
+            }
+            .presentationDetents([.medium])
+        }
     }
 
     private var lockedView: some View {
@@ -125,15 +151,30 @@ struct GameMasterView: View {
                 ForEach($draftConfig.activities) { $activity in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Label(activity.title.isEmpty ? "Activity" : activity.title, systemImage: activity.symbol)
+                            iconButton(
+                                symbol: activity.symbol,
+                                accessibilityLabel: "Change Activity Icon"
+                            ) {
+                                iconSelection = IconSelection(
+                                    kind: .activity,
+                                    id: activity.id,
+                                    title: activity.title.isEmpty ? "Activity Icon" : activity.title
+                                )
+                            }
+                            Text(activity.title.isEmpty ? "Activity" : activity.title)
                                 .font(.headline)
                             Spacer()
                             Button(role: .destructive) {
                                 removeActivity(id: activity.id)
                             } label: {
-                                Label("Remove", systemImage: "trash")
+                                Image(systemName: "trash")
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(.red)
+                                    .frame(width: 30, height: 30)
                             }
+                            .buttonStyle(.plain)
                             .disabled(draftConfig.activities.count <= 1)
+                            .accessibilityLabel("Remove Activity")
                         }
 
                         TextField("Title", text: $activity.title)
@@ -172,14 +213,29 @@ struct GameMasterView: View {
                 ForEach($draftConfig.streaks) { $streak in
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Label(streak.title.isEmpty ? "Streak" : streak.title, systemImage: "flame.fill")
+                            iconButton(
+                                symbol: streak.symbol,
+                                accessibilityLabel: "Change Streak Icon"
+                            ) {
+                                iconSelection = IconSelection(
+                                    kind: .streak,
+                                    id: streak.id,
+                                    title: streak.title.isEmpty ? "Streak Icon" : streak.title
+                                )
+                            }
+                            Text(streak.title.isEmpty ? "Streak" : streak.title)
                                 .font(.headline)
                             Spacer()
                             Button(role: .destructive) {
                                 removeStreak(id: streak.id)
                             } label: {
-                                Label("Remove", systemImage: "trash")
+                                Image(systemName: "trash")
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(.red)
+                                    .frame(width: 30, height: 30)
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Remove Streak")
                         }
 
                         TextField("Streak text", text: $streak.title)
@@ -191,7 +247,7 @@ struct GameMasterView: View {
                                 Text(frequency.displayName).tag(frequency)
                             }
                         }
-                        .pickerStyle(.segmented)
+                        .pickerStyle(.menu)
 
                         Picker("Reward", selection: $streak.rewardCoins) {
                             ForEach(rewardOptions, id: \.self) { reward in
@@ -319,7 +375,8 @@ struct GameMasterView: View {
                 frequency: .daily,
                 minimumLength: 3,
                 rewardCoins: 3,
-                extraRewardCoins: 0
+                extraRewardCoins: 0,
+                symbol: "flame.fill"
             )
         )
     }
@@ -352,6 +409,12 @@ struct GameMasterView: View {
             config.streaks[index].rewardCoins = min(max(config.streaks[index].rewardCoins, 0), 50)
             config.streaks[index].extraRewardCoins = min(max(config.streaks[index].extraRewardCoins, 0), 50)
             config.streaks[index].activityIDs = config.streaks[index].activityIDs.filter { validActivityIDs.contains($0) }
+            if config.streaks[index].symbol.isEmpty {
+                config.streaks[index].symbol = "flame.fill"
+            }
+        }
+        for index in config.activities.indices where config.activities[index].symbol.isEmpty {
+            config.activities[index].symbol = "checkmark.circle.fill"
         }
         return config
     }
@@ -368,5 +431,104 @@ struct GameMasterView: View {
             return "1 minute"
         }
         return "\(seconds / 60) minutes"
+    }
+
+    private func iconButton(symbol: String, accessibilityLabel: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(.orange)
+                .frame(width: 34, height: 34)
+                .background(Color.orange.opacity(0.14), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private func currentSymbol(for selection: IconSelection) -> String {
+        switch selection.kind {
+        case .activity:
+            return draftConfig.activities.first(where: { $0.id == selection.id })?.symbol ?? "checkmark.circle.fill"
+        case .streak:
+            return draftConfig.streaks.first(where: { $0.id == selection.id })?.symbol ?? "flame.fill"
+        }
+    }
+
+    private func setIcon(_ symbol: String, for selection: IconSelection) {
+        switch selection.kind {
+        case .activity:
+            guard let index = draftConfig.activities.firstIndex(where: { $0.id == selection.id }) else { return }
+            draftConfig.activities[index].symbol = symbol
+        case .streak:
+            guard let index = draftConfig.streaks.firstIndex(where: { $0.id == selection.id }) else { return }
+            draftConfig.streaks[index].symbol = symbol
+        }
+    }
+}
+
+private enum IconSelectionKind {
+    case activity
+    case streak
+}
+
+private struct IconSelection: Identifiable {
+    let kind: IconSelectionKind
+    let id: String
+    let title: String
+}
+
+private struct IconOption: Identifiable {
+    let title: String
+    let symbol: String
+
+    var id: String { symbol }
+}
+
+private struct IconPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let title: String
+    let selectedSymbol: String
+    let options: [IconOption]
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 78), spacing: 12)], spacing: 12) {
+                    ForEach(options) { option in
+                        Button {
+                            onSelect(option.symbol)
+                            dismiss()
+                        } label: {
+                            VStack(spacing: 8) {
+                                Image(systemName: option.symbol)
+                                    .font(.title2.weight(.bold))
+                                    .frame(width: 42, height: 42)
+                                Text(option.title)
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(1)
+                            }
+                            .foregroundStyle(option.symbol == selectedSymbol ? .white : .primary)
+                            .frame(maxWidth: .infinity, minHeight: 74)
+                            .background(
+                                option.symbol == selectedSymbol ? Color.orange : Color.orange.opacity(0.12),
+                                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(18)
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }

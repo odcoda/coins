@@ -229,7 +229,7 @@ enum RewardEngine {
 
             let extraPeriods = max(progress.currentLength - max(streak.minimumLength, 1), 0)
             let coins = max(streak.rewardCoins, 0) + extraPeriods * max(streak.extraRewardCoins, 0)
-            let unit = streak.frequency.unitName
+            let unit = streak.frequency.progressUnitName
             let pluralUnit = progress.currentLength == 1 ? unit : "\(unit)s"
             let detail = streak.detail.isEmpty
                 ? "\(progress.currentLength) \(pluralUnit) in a row."
@@ -346,10 +346,21 @@ enum RewardEngine {
 
     private static func periodStart(for date: Date, frequency: StreakFrequency, calendar: Calendar) -> Date {
         switch frequency {
-        case .daily:
-            return calendar.startOfDay(for: date)
-        case .weekly:
-            return calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
+        case .daily, .every2Days, .every3Days, .every4Days, .every5Days:
+            return bucketedStart(
+                for: calendar.startOfDay(for: date),
+                component: .day,
+                interval: frequency.interval,
+                calendar: calendar
+            )
+        case .weekly, .every2Weeks, .every3Weeks, .every4Weeks:
+            let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
+            return bucketedStart(
+                for: weekStart,
+                component: .weekOfYear,
+                interval: frequency.interval,
+                calendar: calendar
+            )
         case .monthly:
             let components = calendar.dateComponents([.year, .month], from: date)
             return calendar.date(from: components) ?? calendar.startOfDay(for: date)
@@ -369,15 +380,39 @@ enum RewardEngine {
 
         let component: Calendar.Component
         switch frequency {
-        case .daily:
+        case .daily, .every2Days, .every3Days, .every4Days, .every5Days:
             component = .day
-        case .weekly:
+        case .weekly, .every2Weeks, .every3Weeks, .every4Weeks:
             component = .weekOfYear
         case .monthly:
             component = .month
         }
 
-        return calendar.dateComponents([component], from: lhsDate, to: rhsDate).value(for: component) ?? 0
+        let componentDistance = calendar.dateComponents([component], from: lhsDate, to: rhsDate).value(for: component) ?? 0
+        return componentDistance / max(frequency.interval, 1)
+    }
+
+    private static func bucketedStart(
+        for date: Date,
+        component: Calendar.Component,
+        interval: Int,
+        calendar: Calendar
+    ) -> Date {
+        guard interval > 1,
+              let referenceDate = calendar.date(from: DateComponents(year: 2001, month: 1, day: 1)) else {
+            return date
+        }
+
+        let referenceStart: Date
+        if component == .weekOfYear {
+            referenceStart = calendar.dateInterval(of: .weekOfYear, for: referenceDate)?.start ?? calendar.startOfDay(for: referenceDate)
+        } else {
+            referenceStart = calendar.startOfDay(for: referenceDate)
+        }
+
+        let distance = calendar.dateComponents([component], from: referenceStart, to: date).value(for: component) ?? 0
+        let bucketDistance = distance - distance.modulo(interval)
+        return calendar.date(byAdding: component, value: bucketDistance, to: referenceStart) ?? date
     }
 
     private static let dayFormatter: DateFormatter = {
@@ -387,4 +422,11 @@ enum RewardEngine {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+}
+
+private extension Int {
+    func modulo(_ divisor: Int) -> Int {
+        let remainder = self % divisor
+        return remainder >= 0 ? remainder : remainder + divisor
+    }
 }

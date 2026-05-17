@@ -63,6 +63,36 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertEqual(snapshot.state.streakProgress["weekly-practice"]?.currentLength, 4)
     }
 
+    func testEveryTwoDaysStreakUsesTwoDayPeriods() {
+        var snapshot = GameSnapshot.seed
+        snapshot.config.treasureChest.isEnabled = false
+        snapshot.config.streaks = [
+            StreakDefinition(
+                id: "every-two-days",
+                title: "Every Two Days",
+                detail: "Practice every other day.",
+                activityIDs: ["warmup"],
+                frequency: .every2Days,
+                minimumLength: 2,
+                rewardCoins: 4,
+                extraRewardCoins: 0
+            )
+        ]
+
+        let calendar = Calendar(identifier: .gregorian)
+        let dayOne = calendar.date(from: DateComponents(year: 2024, month: 1, day: 1))!
+        let samePeriod = dayOne.addingTimeInterval(86_400)
+        let nextPeriod = dayOne.addingTimeInterval(2 * 86_400)
+
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne, roll: 1, calendar: calendar)
+        let second = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: samePeriod, roll: 1, calendar: calendar)
+        let third = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: nextPeriod, roll: 1, calendar: calendar)
+
+        XCTAssertFalse(second.events.contains(where: { $0.kind == .dailyStreak }))
+        XCTAssertTrue(third.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
+        XCTAssertEqual(snapshot.state.streakProgress["every-two-days"]?.currentLength, 2)
+    }
+
     func testStreakIgnoresActivitiesOutsideConfiguredSet() {
         var snapshot = GameSnapshot.seed
         snapshot.config.treasureChest.isEnabled = false

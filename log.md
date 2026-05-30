@@ -72,3 +72,10 @@ generated and installed the first ios app icon:
 - documented phone install steps
 Up next:
 - try the app on a physical iphone
+
+## 2026-05-30 xcode target inspector crash
+fixed Xcode 15.4 project metadata generation:
+- replaced the patched Xcode 16 project format with XcodeGen's native Xcode 15.3 format
+- removed the explicit blank development team so signing can be configured in Xcode
+Up next:
+- select a development team and run the app on an iphone

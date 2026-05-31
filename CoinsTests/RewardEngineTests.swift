@@ -11,7 +11,8 @@ final class RewardEngineTests: XCTestCase {
 
         XCTAssertFalse(first.isDenied)
         XCTAssertTrue(second.isDenied)
-        XCTAssertEqual(snapshot.state.suspiciousTapCount, 1)
+        XCTAssertEqual(snapshot.state.activityEvents.count, 1)
+        XCTAssertEqual(snapshot.state.rewardEvents, first.events)
     }
 
     func testComboAndConfiguredDailyStreakRewardsStack() {

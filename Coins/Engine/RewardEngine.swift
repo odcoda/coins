@@ -19,15 +19,6 @@ enum RewardEngine {
             if elapsed < Double(activity.lockoutSeconds) {
                 let remaining = Int(ceil(Double(activity.lockoutSeconds) - elapsed))
                 let denial = "Lockout active for \(remaining)s."
-                snapshot.state.deniedActivityEvents.append(
-                    DeniedActivityEvent(
-                        id: UUID(),
-                        createdAt: now,
-                        activityID: activity.id,
-                        activityTitle: activity.title,
-                        detail: denial
-                    )
-                )
                 return CompletionResult(events: [], deniedReason: denial, speechText: denial)
             }
         }

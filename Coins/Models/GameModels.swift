@@ -15,7 +15,7 @@ struct ActivityDefinition: Identifiable, Codable, Hashable {
     var symbol: String
 }
 
-struct DailyCompletionBonusDefinition: Identifiable, Codable, Hashable {
+struct DailyDefinition: Identifiable, Codable, Hashable {
     var id: String
     var title: String
     var detail: String
@@ -141,7 +141,7 @@ struct GameConfig: Codable, Hashable {
     var speechEnabled: Bool
     var masterPassword: String
     var activities: [ActivityDefinition]
-    var dailyCompletionBonuses: [DailyCompletionBonusDefinition]
+    var dailyCompletionBonuses: [DailyDefinition]
     var streaks: [StreakDefinition]
     var achievements: [AchievementDefinition]
     var randomDrops: RandomDropConfig
@@ -163,14 +163,6 @@ struct ActivityEvent: Identifiable, Codable, Hashable {
     var createdAt: Date
     var activityID: String
     var activityTitle: String
-}
-
-struct DeniedActivityEvent: Identifiable, Codable, Hashable {
-    var id: UUID
-    var createdAt: Date
-    var activityID: String
-    var activityTitle: String
-    var detail: String
 }
 
 struct RewardEvent: Identifiable, Codable, Hashable {
@@ -201,7 +193,6 @@ struct ActivityStats: Hashable {
 struct GameState: Codable, Hashable {
     var activityEvents: [ActivityEvent] = []
     var rewardEvents: [RewardEvent] = []
-    var deniedActivityEvents: [DeniedActivityEvent] = []
 }
 
 struct GameSnapshot: Codable, Hashable {
@@ -256,7 +247,7 @@ extension GameSnapshot {
                 )
             ],
             dailyCompletionBonuses: [
-                DailyCompletionBonusDefinition(
+                DailyDefinition(
                     id: "combo-2",
                     title: "Quick Double",
                     detail: "You hit 2 total completions today.",
@@ -264,7 +255,7 @@ extension GameSnapshot {
                     threshold: 2,
                     rewardCoins: 1
                 ),
-                DailyCompletionBonusDefinition(
+                DailyDefinition(
                     id: "combo-4",
                     title: "Practice Wave",
                     detail: "You hit 4 total completions today.",
@@ -349,10 +340,6 @@ extension GameState {
         rewardEvents.reduce(0) { total, event in
             total + max(event.coins, 0)
         }
-    }
-
-    var suspiciousTapCount: Int {
-        deniedActivityEvents.count
     }
 
     var cashedOutCoinsWatermark: Int {

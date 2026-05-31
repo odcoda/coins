@@ -103,3 +103,10 @@ removed compatibility code while the app has no users:
 - removed an unused cash-out event field
 Up next:
 - decide whether server sync needs config revision history
+
+## 2026-05-31 daily definition cleanup
+trimmed unused game-state data:
+- renamed the daily completion milestone type to `DailyDefinition`
+- stopped persisting denied lockout taps while keeping engine-side lockout enforcement
+Up next:
+- decide whether server sync needs config revision history

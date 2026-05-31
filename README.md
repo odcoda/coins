@@ -61,7 +61,7 @@ The engine is intentionally deterministic when tests pass explicit dates and
 random rolls.
 
 - `ActivityDefinition` gives the known structured reward and has its own lockout.
-- `DailyCompletionBonusDefinition` triggers from qualifying completions during the current day.
+- `DailyDefinition` triggers from qualifying completions during the current day.
 - `StreakDefinition` triggers once per configured period for its chosen
   activities. Periods can be daily, every 2-5 days, weekly, every 2-4 weeks,
   or monthly, with optional extra reward growth after the minimum streak length.

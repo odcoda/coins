@@ -630,7 +630,7 @@ private struct TrackingPage: View {
             } else {
                 ForEach(store.unlockedAchievements) { achievement in
                     HStack {
-                        Image(systemName: "sparkles")
+                        Image(systemName: achievement.symbol)
                             .foregroundStyle(style.accent)
                         VStack(alignment: .leading) {
                             Text(achievement.title)

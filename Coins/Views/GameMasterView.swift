@@ -290,6 +290,39 @@ struct GameMasterView: View {
                 }
             }
 
+            Section("Achievement Menu") {
+                Text("Choose which one-time bonuses are available. Enabled achievements are checked after every completed activity.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Text("\(draftConfig.achievements.count) of \(AchievementCatalog.all.count) enabled")
+                    .font(.subheadline.weight(.semibold))
+
+                ForEach(AchievementCategory.allCases) { category in
+                    DisclosureGroup(category.displayName) {
+                        ForEach(AchievementCatalog.achievements(in: category)) { achievement in
+                            Toggle(isOn: achievementIncludedBinding(for: achievement)) {
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: achievement.symbol)
+                                        .foregroundStyle(.orange)
+                                        .frame(width: 22)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(achievement.title)
+                                            .fontWeight(.semibold)
+                                        Text(achievement.detail)
+                                            .font(.footnote)
+                                            .foregroundStyle(.secondary)
+                                        Text("+\(achievement.rewardCoins) \(achievement.rewardCoins == 1 ? "coin" : "coins")")
+                                            .font(.caption.weight(.bold))
+                                            .foregroundStyle(.orange)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Section("Treasure Chest") {
                 Toggle("Enable surprise rewards", isOn: $draftConfig.randomDrops.isEnabled)
                 Stepper("Min daily streak \(draftConfig.randomDrops.minDailyStreak)", value: $draftConfig.randomDrops.minDailyStreak, in: 1...30)
@@ -404,6 +437,20 @@ struct GameMasterView: View {
         }
     }
 
+    private func achievementIncludedBinding(for achievement: AchievementDefinition) -> Binding<Bool> {
+        Binding {
+            draftConfig.achievements.contains { $0.id == achievement.id }
+        } set: { isIncluded in
+            var enabledAchievementIDs = Set(draftConfig.achievements.map(\.id))
+            if isIncluded {
+                enabledAchievementIDs.insert(achievement.id)
+            } else {
+                enabledAchievementIDs.remove(achievement.id)
+            }
+            draftConfig.achievements = AchievementCatalog.enabledAchievements(withIDs: enabledAchievementIDs)
+        }
+    }
+
     private func sanitizedConfig() -> GameConfig {
         var config = draftConfig
         let validActivityIDs = Set(config.activities.map(\.id))
@@ -426,6 +473,7 @@ struct GameMasterView: View {
         for index in config.activities.indices where config.activities[index].symbol.isEmpty {
             config.activities[index].symbol = "checkmark.circle.fill"
         }
+        config.achievements = AchievementCatalog.enabledAchievements(withIDs: config.achievements.map(\.id))
         return config
     }
 

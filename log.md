@@ -110,3 +110,12 @@ trimmed unused game-state data:
 - stopped persisting denied lockout taps while keeping engine-side lockout enforcement
 Up next:
 - decide whether server sync needs config revision history
+
+## 2026-05-31 special achievement catalog
+expanded achievements beyond simple counters:
+- added a 29-item menu with lesson patterns and calendar surprises
+- added grouped game-master toggles for available achievements
+- evaluate today's ordered activity log once per tap, then check each enabled rule
+- verified 15 reward-engine tests on the iphone 15 simulator
+Up next:
+- polish achievement celebration presentation

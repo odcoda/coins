@@ -106,21 +106,58 @@ struct StreakDefinition: Identifiable, Codable, Hashable {
     var symbol: String = "flame.fill"
 }
 
-enum AchievementMetric: String, Codable, CaseIterable {
-    case totalCompletions
-    case lifetimeCoins
-    case dailyStreak
-    case activityCompletions
+enum AchievementCategory: String, Codable, CaseIterable, Identifiable {
+    case milestones
+    case lessonPatterns
+    case calendarSurprises
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .milestones:
+            return "Milestones"
+        case .lessonPatterns:
+            return "Lesson Patterns"
+        case .calendarSurprises:
+            return "Calendar Surprises"
+        }
+    }
+}
+
+enum AchievementRule: Codable, Hashable {
+    case totalCompletions(Int)
+    case lifetimeCoins(Int)
+    case dailyStreak(Int)
+    case anyActivityCompletions(Int)
+    case dailyCompletions(Int)
+    case distinctActivitiesToday(Int)
+    case allActivitiesToday
+    case configuredActivitiesInOrderToday
+    case configuredActivitiesInReverseOrderToday
+    case sameActivityInARow(Int)
+    case alternatingActivitiesInARow(Int)
+    case roundTrip
+    case beforeHour(Int)
+    case afterHour(Int)
+    case duringHour(Int)
+    case weekday(Int)
+    case weekend
+    case dayOfMonth(Int)
+    case lastDayOfMonth
+    case fridayThe13th
+    case leapDay
+    case palindromeDate
 }
 
 struct AchievementDefinition: Identifiable, Codable, Hashable {
     var id: String
     var title: String
     var detail: String
-    var metric: AchievementMetric
-    var threshold: Int
+    var category: AchievementCategory
+    var rule: AchievementRule
     var rewardCoins: Int
-    var activityID: String?
+    var symbol: String
 }
 
 struct RandomDropConfig: Codable, Hashable {
@@ -288,35 +325,7 @@ extension GameSnapshot {
                     symbol: "sun.max.fill"
                 )
             ],
-            achievements: [
-                AchievementDefinition(
-                    id: "first-10",
-                    title: "Treasure Hunter",
-                    detail: "Complete ten activities total.",
-                    metric: .totalCompletions,
-                    threshold: 10,
-                    rewardCoins: 5,
-                    activityID: nil
-                ),
-                AchievementDefinition(
-                    id: "coins-25",
-                    title: "Piggy Bank Builder",
-                    detail: "Reach 25 lifetime coins.",
-                    metric: .lifetimeCoins,
-                    threshold: 25,
-                    rewardCoins: 5,
-                    activityID: nil
-                ),
-                AchievementDefinition(
-                    id: "song-12",
-                    title: "Songsmith",
-                    detail: "Practice the same song activity twelve times.",
-                    metric: .activityCompletions,
-                    threshold: 12,
-                    rewardCoins: 8,
-                    activityID: "song-practice"
-                )
-            ],
+            achievements: AchievementCatalog.defaultAchievements,
             randomDrops: RandomDropConfig(
                 isEnabled: true,
                 minDailyStreak: 2,
@@ -436,28 +445,5 @@ extension GameState {
             currentDay = priorDay
         }
         return streak
-    }
-}
-
-extension AchievementMetric {
-    func value(
-        for achievement: AchievementDefinition,
-        in state: GameState,
-        at date: Date,
-        calendar: Calendar
-    ) -> Int {
-        switch self {
-        case .totalCompletions:
-            return state.activityEvents.count
-        case .lifetimeCoins:
-            return state.lifetimeCoins
-        case .dailyStreak:
-            return state.activeDailyStreak(at: date, calendar: calendar)
-        case .activityCompletions:
-            guard let activityID = achievement.activityID else {
-                return 0
-            }
-            return state.stats(for: activityID, at: date, calendar: calendar).totalCompletions
-        }
     }
 }

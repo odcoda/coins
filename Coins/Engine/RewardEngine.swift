@@ -264,15 +264,11 @@ enum RewardEngine {
         calendar: Calendar
     ) -> [RewardEvent] {
         var events: [RewardEvent] = []
+        let context = AchievementEvaluationContext(snapshot: snapshot, at: now, calendar: calendar)
+        var unlockedAchievementIDs = context.unlockedAchievementIDs
 
-        for achievement in snapshot.config.achievements where !snapshot.state.unlockedAchievementIDs.contains(achievement.id) {
-            let metricValue = achievement.metric.value(
-                for: achievement,
-                in: snapshot.state,
-                at: now,
-                calendar: calendar
-            )
-            guard metricValue >= achievement.threshold else {
+        for achievement in snapshot.config.achievements where !unlockedAchievementIDs.contains(achievement.id) {
+            guard achievement.rule.isSatisfied(in: context) else {
                 continue
             }
 
@@ -288,6 +284,7 @@ enum RewardEngine {
                     now: now
                 )
             )
+            unlockedAchievementIDs.insert(achievement.id)
         }
 
         return events

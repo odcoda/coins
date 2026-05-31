@@ -19,6 +19,7 @@
 		B076C64A80F46554A5F5B44A /* SpeechCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AD8AA87EFA25D9ECBDD32B2 /* SpeechCoordinator.swift */; };
 		C0B3D16D489FC5308271BC6B /* CoinsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7938D1D5DA6D10835DE7AF0E /* CoinsApp.swift */; };
 		E5B13C1D83F726DFB2005824 /* CoinBurstView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1058F5A26FA4C3A455B87DB9 /* CoinBurstView.swift */; };
+		EB8ED6F780BEE09542880327 /* AchievementCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF4829E6E64E8FF1CC2C98C1 /* AchievementCatalog.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -43,6 +44,7 @@
 		7938D1D5DA6D10835DE7AF0E /* CoinsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinsApp.swift; sourceTree = "<group>"; };
 		AF6B20EA9F87633847585646 /* CoinTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinTheme.swift; sourceTree = "<group>"; };
 		BDAF4E807819288E6E641E91 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BF4829E6E64E8FF1CC2C98C1 /* AchievementCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementCatalog.swift; sourceTree = "<group>"; };
 		C64067BBD97ADED60D74144D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D352D33300E37F42EACA384A /* GameMasterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameMasterView.swift; sourceTree = "<group>"; };
 		ECE598662076047185DC54D9 /* CoinsTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CoinsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -146,6 +148,7 @@
 		FFD0FC286F3FDEDB720D1CDF /* Engine */ = {
 			isa = PBXGroup;
 			children = (
+				BF4829E6E64E8FF1CC2C98C1 /* AchievementCatalog.swift */,
 				364B521664D721D9B22A15A3 /* RewardEngine.swift */,
 			);
 			path = Engine;
@@ -240,6 +243,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EB8ED6F780BEE09542880327 /* AchievementCatalog.swift in Sources */,
 				E5B13C1D83F726DFB2005824 /* CoinBurstView.swift in Sources */,
 				5B841E45DB1B10EBCC05C9D2 /* CoinTheme.swift in Sources */,
 				C0B3D16D489FC5308271BC6B /* CoinsApp.swift in Sources */,

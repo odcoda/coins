@@ -13,7 +13,7 @@ world work; it gives a configurable reward loop around a trusted completion tap.
 - Configurable activities with picker-based rewards and lockouts
 - Same-day combo bonuses and configurable interval-based streak bonuses
 - Surprise treasure chests gated by streak/completion thresholds
-- Achievement unlocks
+- Configurable achievement unlocks from a 29-item catalog
 - Always-visible coin balance with a reward fly-up animation
 - Separate piggy bank page with streak and cash-out tracking
 - Separate tracking page with achievements, recent rewards, and reward-history charts
@@ -46,9 +46,9 @@ chart. These charts are built from immutable reward history.
 Game Master is opened from the drawer. The seeded password is `1234`. Game
 Master currently supports speech mode, adding/removing/editing activities,
 picker-based activity reward/lockout edits, configurable activity-scoped
-streaks, icon selection for activities and streaks, treasure chest tuning,
-balance adjustments, JSON import/export, seed reset, and changing the
-game-master password.
+streaks, icon selection for activities and streaks, achievement-catalog
+selection, treasure chest tuning, balance adjustments, JSON import/export, seed
+reset, and changing the game-master password.
 
 Cash Out does not remove coins from the piggy bank. It records how many new coins
 have been converted to earned dollars since the last cash-out, using the
@@ -66,9 +66,15 @@ random rolls.
   activities. Periods can be daily, every 2-5 days, weekly, every 2-4 weeks,
   or monthly, with optional extra reward growth after the minimum streak length.
 - `RandomDropConfig` gates random bonuses behind streak and daily-completion thresholds.
-- `AchievementDefinition` unlocks one-time bonuses from configured metrics.
+- `AchievementDefinition` unlocks selected one-time bonuses from catalog rules.
 - `ActivityEvent` records completed real-world activities.
 - `RewardEvent` records rewards, adjustments, and cash-out events.
+
+After each accepted activity, the achievement evaluator scans activity and reward
+history once to build a summary plus today's ordered activity log. Each enabled
+catalog rule then checks that summary. The menu includes count-based milestones
+as well as lesson-order patterns, Friday the 13th, leap day, palindrome dates,
+early-bird sessions, and other calendar surprises.
 
 ## Persistence And Sync
 

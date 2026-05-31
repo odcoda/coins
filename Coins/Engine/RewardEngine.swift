@@ -130,7 +130,6 @@ enum RewardEngine {
             detail: String(format: "Converted %d new coins into $%.2f earned.", uncashedCoins, dollars),
             coins: 0,
             kind: .cashOut,
-            cashOutCoins: uncashedCoins,
             cashOutDollars: dollars,
             snapshot: &snapshot,
             now: now
@@ -310,7 +309,6 @@ enum RewardEngine {
         kind: RewardKind,
         activityEventID: UUID? = nil,
         definitionID: String? = nil,
-        cashOutCoins: Int? = nil,
         cashOutDollars: Double? = nil,
         snapshot: inout GameSnapshot,
         now: Date
@@ -325,7 +323,6 @@ enum RewardEngine {
             kind: kind,
             activityEventID: activityEventID,
             definitionID: definitionID,
-            cashOutCoins: cashOutCoins,
             cashOutDollars: cashOutDollars
         )
         snapshot.state.rewardEvents.append(event)

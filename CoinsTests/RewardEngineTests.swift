@@ -175,60 +175,6 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertEqual(snapshot.state.coinBalance, 0)
     }
 
-    func testLegacySnapshotMigratesLedgerAndTheme() throws {
-        let json = """
-        {
-          "config": {
-            "theme": "coinGarden",
-            "speechEnabled": false,
-            "masterPassword": "1234",
-            "activities": [],
-            "comboMilestones": [],
-            "streaks": [],
-            "achievements": [],
-            "treasureChest": {
-              "isEnabled": true,
-              "minDailyStreak": 2,
-              "minDailyCompletions": 2,
-              "chance": 0.35,
-              "minCoins": 3,
-              "maxCoins": 7
-            },
-            "economy": {
-              "coinsPerDollar": 20
-            }
-          },
-          "state": {
-            "suspiciousTapCount": 1,
-            "cashedOutDollars": 0,
-            "unlockedAchievementIDs": ["legacy-achievement"],
-            "ledger": [
-              {
-                "id": "00000000-0000-0000-0000-000000000001",
-                "createdAt": "2023-11-14T22:13:20Z",
-                "title": "Old Reward",
-                "detail": "Imported from the previous format.",
-                "coins": 2,
-                "balanceAfter": 2,
-                "kind": "structured"
-              }
-            ]
-          }
-        }
-        """
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-
-        let snapshot = try decoder.decode(GameSnapshot.self, from: Data(json.utf8))
-
-        XCTAssertEqual(snapshot.config.theme, .coins)
-        XCTAssertEqual(snapshot.state.rewardEvents.filter { $0.kind == .structured }.count, 1)
-        XCTAssertEqual(snapshot.state.rewardEvents.filter { $0.kind == .achievement }.count, 1)
-        XCTAssertEqual(snapshot.state.coinBalance, 2)
-        XCTAssertEqual(snapshot.state.suspiciousTapCount, 1)
-        XCTAssertTrue(snapshot.state.unlockedAchievementIDs.contains("legacy-achievement"))
-    }
-
     func testSnapshotRoundTripPreservesEventHistories() throws {
         var snapshot = GameSnapshot.seed
         let now = Date(timeIntervalSince1970: 1_700_000_000)

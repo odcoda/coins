@@ -95,3 +95,11 @@ simplified the game-state model around immutable histories:
 - verified 11 reward-engine tests on the iphone 15 simulator
 Up next:
 - decide whether server sync needs config revision history
+
+## 2026-05-31 prototype schema cleanup
+removed compatibility code while the app has no users:
+- deleted legacy snapshot decoders and migration-only model types
+- switched the current schema to synthesized codable implementations
+- removed an unused cash-out event field
+Up next:
+- decide whether server sync needs config revision history

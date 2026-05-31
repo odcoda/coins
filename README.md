@@ -40,9 +40,8 @@ The Piggy Bank page shows the larger balance context, daily streak, cashed-out
 dollars, pending cash-out value, and the cash-out control.
 
 The Tracking page shows today/lifetime/unlocked stats, unlocked achievements,
-recent reward ledger entries, a rewards-by-day bar chart, and a cumulative coins
-line chart. These charts are built from the reward ledger, which records the
-timestamp, coin delta, balance, and reward kind for each event.
+recent reward events, a rewards-by-day bar chart, and a cumulative coins line
+chart. These charts are built from immutable reward history.
 
 Game Master is opened from the drawer. The seeded password is `1234`. Game
 Master currently supports speech mode, adding/removing/editing activities,
@@ -61,21 +60,23 @@ Reward behavior lives in [RewardEngine.swift](Coins/Engine/RewardEngine.swift).
 The engine is intentionally deterministic when tests pass explicit dates and
 random rolls.
 
-- `Activity` gives the known structured reward and has its own lockout.
-- `ComboMilestone` triggers from total completions during the current day.
+- `ActivityDefinition` gives the known structured reward and has its own lockout.
+- `DailyCompletionBonusDefinition` triggers from qualifying completions during the current day.
 - `StreakDefinition` triggers once per configured period for its chosen
   activities. Periods can be daily, every 2-5 days, weekly, every 2-4 weeks,
   or monthly, with optional extra reward growth after the minimum streak length.
-- `TreasureChestConfig` gates random bonuses behind streak and daily-completion thresholds.
+- `RandomDropConfig` gates random bonuses behind streak and daily-completion thresholds.
 - `AchievementDefinition` unlocks one-time bonuses from configured metrics.
-- `LedgerEntry` records all rewards, adjustments, and cash-out events.
+- `ActivityEvent` records completed real-world activities.
+- `RewardEvent` records rewards, adjustments, and cash-out events.
 
 ## Persistence And Sync
 
-The app stores a `GameSnapshot`, which contains both `GameConfig` and
-`GameState`, as JSON in app support storage. Game Master's export/import actions
-use the same snapshot format, so a complete local game can be backed up,
-restored, or moved to another device manually.
+The app stores a `GameSnapshot`, which contains the current `GameConfig` and an
+event-backed `GameState`, as JSON in app support storage. Balance, progress,
+streaks, and unlocked achievements are derived from the event histories. Game
+Master's export/import actions use the same snapshot format, so a complete local
+game can be backed up, restored, or moved to another device manually.
 
 Longer term, this snapshot shape is the natural boundary for server sync: send
 operations or snapshots to a backend, then reconcile into `GameSnapshot`.
@@ -83,7 +84,7 @@ operations or snapshots to a backend, then reconcile into `GameSnapshot`.
 ## Repo Layout
 
 - `Coins/App`: app entry point.
-- `Coins/Models`: codable config, state, activity, reward, and ledger types.
+- `Coins/Models`: codable config, state, activity, and reward-event types.
 - `Coins/Engine`: reward calculation and state transitions.
 - `Coins/Store`: observable app state, persistence, speech, and UI-facing actions.
 - `Coins/Views`: SwiftUI player and game-master screens.

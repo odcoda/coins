@@ -291,17 +291,17 @@ struct GameMasterView: View {
             }
 
             Section("Treasure Chest") {
-                Toggle("Enable surprise rewards", isOn: $draftConfig.treasureChest.isEnabled)
-                Stepper("Min daily streak \(draftConfig.treasureChest.minDailyStreak)", value: $draftConfig.treasureChest.minDailyStreak, in: 1...30)
-                Stepper("Min daily completions \(draftConfig.treasureChest.minDailyCompletions)", value: $draftConfig.treasureChest.minDailyCompletions, in: 1...20)
+                Toggle("Enable surprise rewards", isOn: $draftConfig.randomDrops.isEnabled)
+                Stepper("Min daily streak \(draftConfig.randomDrops.minDailyStreak)", value: $draftConfig.randomDrops.minDailyStreak, in: 1...30)
+                Stepper("Min daily completions \(draftConfig.randomDrops.minDailyCompletions)", value: $draftConfig.randomDrops.minDailyCompletions, in: 1...20)
                 HStack {
                     Text("Drop chance")
-                    Slider(value: $draftConfig.treasureChest.chance, in: 0.05...1.0, step: 0.05)
-                    Text("\(Int(draftConfig.treasureChest.chance * 100))%")
+                    Slider(value: $draftConfig.randomDrops.chance, in: 0.05...1.0, step: 0.05)
+                    Text("\(Int(draftConfig.randomDrops.chance * 100))%")
                         .monospacedDigit()
                 }
-                Stepper("Chest min \(draftConfig.treasureChest.minCoins)", value: $draftConfig.treasureChest.minCoins, in: 1...20)
-                Stepper("Chest max \(draftConfig.treasureChest.maxCoins)", value: $draftConfig.treasureChest.maxCoins, in: draftConfig.treasureChest.minCoins...30)
+                Stepper("Chest min \(draftConfig.randomDrops.minCoins)", value: $draftConfig.randomDrops.minCoins, in: 1...20)
+                Stepper("Chest max \(draftConfig.randomDrops.maxCoins)", value: $draftConfig.randomDrops.maxCoins, in: draftConfig.randomDrops.minCoins...30)
             }
 
             Section("Balance Controls") {
@@ -346,7 +346,7 @@ struct GameMasterView: View {
 
     private func addActivity() {
         draftConfig.activities.append(
-            Activity(
+            ActivityDefinition(
                 id: "activity-\(UUID().uuidString)",
                 title: "New Activity",
                 detail: "Describe the real-world activity.",
@@ -362,6 +362,9 @@ struct GameMasterView: View {
         draftConfig.activities.removeAll { $0.id == id }
         for index in draftConfig.streaks.indices {
             draftConfig.streaks[index].activityIDs.removeAll { $0 == id }
+        }
+        for index in draftConfig.dailyCompletionBonuses.indices {
+            draftConfig.dailyCompletionBonuses[index].activityIDs.removeAll { $0 == id }
         }
     }
 
@@ -411,6 +414,13 @@ struct GameMasterView: View {
             config.streaks[index].activityIDs = config.streaks[index].activityIDs.filter { validActivityIDs.contains($0) }
             if config.streaks[index].symbol.isEmpty {
                 config.streaks[index].symbol = "flame.fill"
+            }
+        }
+        for index in config.dailyCompletionBonuses.indices {
+            config.dailyCompletionBonuses[index].threshold = max(config.dailyCompletionBonuses[index].threshold, 1)
+            config.dailyCompletionBonuses[index].rewardCoins = min(max(config.dailyCompletionBonuses[index].rewardCoins, 0), 50)
+            config.dailyCompletionBonuses[index].activityIDs = config.dailyCompletionBonuses[index].activityIDs.filter {
+                validActivityIDs.contains($0)
             }
         }
         for index in config.activities.indices where config.activities[index].symbol.isEmpty {

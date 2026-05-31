@@ -10,7 +10,7 @@ struct ThemeStyle {
 }
 
 extension ThemeStyle {
-    static let coinGarden = ThemeStyle(
+    static let coins = ThemeStyle(
         backgroundTop: Color(red: 0.95, green: 0.90, blue: 0.72),
         backgroundBottom: Color(red: 0.44, green: 0.73, blue: 0.59),
         accent: Color(red: 0.89, green: 0.58, blue: 0.15),
@@ -22,8 +22,8 @@ extension ThemeStyle {
 
 func themeStyle(for theme: ThemeID) -> ThemeStyle {
     switch theme {
-    case .coinGarden:
-        return .coinGarden
+    case .coins:
+        return .coins
     }
 }
 

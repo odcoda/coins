@@ -121,7 +121,7 @@ struct ContentView: View {
         .zIndex(10)
     }
 
-    private func complete(_ activity: Activity) {
+    private func complete(_ activity: ActivityDefinition) {
         let oldBalance = store.snapshot.state.coinBalance
         let result = store.complete(activity)
         let newBalance = store.snapshot.state.coinBalance
@@ -353,7 +353,7 @@ private struct ActivitiesPage: View {
     @EnvironmentObject private var store: GameStore
     let currentDate: Date
     let style: ThemeStyle
-    let onComplete: (Activity) -> Void
+    let onComplete: (ActivityDefinition) -> Void
 
     var body: some View {
         ScrollView {
@@ -376,7 +376,7 @@ private struct ActivitiesPage: View {
         }
     }
 
-    private func activityRow(for activity: Activity) -> some View {
+    private func activityRow(for activity: ActivityDefinition) -> some View {
         let remainingLockout = store.remainingLockout(for: activity, at: currentDate)
 
         return Button {
@@ -384,7 +384,7 @@ private struct ActivitiesPage: View {
         } label: {
             ActivityCard(
                 activity: activity,
-                progress: store.progress(for: activity),
+                stats: store.stats(for: activity, at: currentDate),
                 remainingLockout: remainingLockout,
                 style: style
             )
@@ -399,7 +399,7 @@ private struct PiggyBankPage: View {
     let style: ThemeStyle
 
     private var uncashedCoins: Int {
-        max(store.snapshot.state.coinBalance - store.snapshot.state.cashedOutCoinsWatermark, 0)
+        store.snapshot.state.pendingCashOutCoins
     }
 
     private var pendingDollars: Double {
@@ -520,7 +520,7 @@ private struct TrackingPage: View {
     let style: ThemeStyle
 
     private var dailySummaries: [DailyRewardSummary] {
-        DailyRewardSummary.make(from: store.snapshot.state.ledger)
+        DailyRewardSummary.make(from: store.snapshot.state.rewardEvents)
     }
 
     var body: some View {
@@ -656,7 +656,7 @@ private struct TrackingPage: View {
             Text("Recent Rewards")
                 .font(.title2.weight(.bold))
 
-            if store.snapshot.state.ledger.isEmpty {
+            if store.snapshot.state.rewardEvents.isEmpty {
                 Text("No rewards yet.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -664,7 +664,8 @@ private struct TrackingPage: View {
                     .padding(16)
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             } else {
-                ForEach(store.snapshot.state.ledger.prefix(8)) { entry in
+                ForEach(store.snapshot.state.rewardHistory.reversed().prefix(8)) { historyEntry in
+                    let entry = historyEntry.event
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(entry.title)
@@ -678,7 +679,7 @@ private struct TrackingPage: View {
                             Text(entry.coins == 0 ? "0" : "\(entry.coins > 0 ? "+" : "")\(entry.coins)")
                                 .fontWeight(.bold)
                                 .foregroundStyle(entry.coins >= 0 ? style.accent : .red)
-                            Text("\(entry.balanceAfter) total")
+                            Text("\(historyEntry.balanceAfter) total")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -716,10 +717,10 @@ private struct DailyRewardSummary: Identifiable {
 
     var id: String { dayKey }
 
-    static func make(from ledger: [LedgerEntry], calendar: Calendar = .current) -> [DailyRewardSummary] {
+    static func make(from rewardEvents: [RewardEvent], calendar: Calendar = .current) -> [DailyRewardSummary] {
         var rewardsByDay: [String: (date: Date, coins: Int)] = [:]
 
-        for entry in ledger where entry.coins > 0 {
+        for entry in rewardEvents where entry.coins > 0 {
             let date = calendar.startOfDay(for: entry.createdAt)
             let key = key(for: date, calendar: calendar)
             var bucket = rewardsByDay[key] ?? (date: date, coins: 0)
@@ -813,8 +814,8 @@ private struct RewardFlyOverlay: View {
 }
 
 private struct ActivityCard: View {
-    let activity: Activity
-    let progress: ActivityProgress
+    let activity: ActivityDefinition
+    let stats: ActivityStats
     let remainingLockout: Int
     let style: ThemeStyle
 
@@ -844,7 +845,7 @@ private struct ActivityCard: View {
                     .foregroundStyle(.secondary)
 
                 HStack {
-                    Text("Today \(progress.completionsToday)x")
+                    Text("Today \(stats.completionsToday)x")
                     Spacer()
                     if remainingLockout > 0 {
                         Text("Ready in \(remainingLockout)s")

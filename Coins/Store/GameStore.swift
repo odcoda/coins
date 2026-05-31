@@ -18,15 +18,17 @@ final class GameStore: ObservableObject {
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         storageURL = directory.appendingPathComponent("snapshot.json")
 
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
         if let data = try? Data(contentsOf: storageURL),
-           let loaded = try? JSONDecoder().decode(GameSnapshot.self, from: data) {
+           let loaded = try? decoder.decode(GameSnapshot.self, from: data) {
             snapshot = loaded
         } else {
             snapshot = .seed
         }
     }
 
-    var activities: [Activity] {
+    var activities: [ActivityDefinition] {
         snapshot.config.activities
     }
 
@@ -39,7 +41,7 @@ final class GameStore: ObservableObject {
     }
 
     @discardableResult
-    func complete(_ activity: Activity) -> CompletionResult {
+    func complete(_ activity: ActivityDefinition) -> CompletionResult {
         var updated = snapshot
         let result = RewardEngine.complete(activityID: activity.id, snapshot: &updated)
         snapshot = updated
@@ -56,12 +58,12 @@ final class GameStore: ObservableObject {
         return result
     }
 
-    func remainingLockout(for activity: Activity, at date: Date = .now) -> Int {
+    func remainingLockout(for activity: ActivityDefinition, at date: Date = .now) -> Int {
         Int(ceil(RewardEngine.remainingLockout(for: activity, snapshot: snapshot, now: date)))
     }
 
-    func progress(for activity: Activity) -> ActivityProgress {
-        snapshot.state.activityProgress[activity.id] ?? ActivityProgress()
+    func stats(for activity: ActivityDefinition, at date: Date = .now) -> ActivityStats {
+        snapshot.state.stats(for: activity.id, at: date)
     }
 
     func cashOut() {

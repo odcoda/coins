@@ -26,14 +26,14 @@ final class RewardEngineTests: XCTestCase {
         _ = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: dayTwo, roll: 1, calendar: calendar)
         let result = RewardEngine.complete(activityID: "sight-reading", snapshot: &snapshot, now: dayThree, roll: 1, calendar: calendar)
 
-        XCTAssertEqual(snapshot.state.dailyStreak, 3)
+        XCTAssertEqual(snapshot.state.activeDailyStreak(at: dayThree, calendar: calendar), 3)
         XCTAssertTrue(result.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
-        XCTAssertTrue(snapshot.state.ledger.contains(where: { $0.kind == .combo }))
+        XCTAssertTrue(snapshot.state.rewardEvents.contains(where: { $0.kind == .combo }))
     }
 
     func testWeeklyStreakExtraRewardGrowsAfterMinimum() {
         var snapshot = GameSnapshot.seed
-        snapshot.config.treasureChest.isEnabled = false
+        snapshot.config.randomDrops.isEnabled = false
         snapshot.config.streaks = [
             StreakDefinition(
                 id: "weekly-practice",
@@ -60,12 +60,15 @@ final class RewardEngineTests: XCTestCase {
 
         XCTAssertTrue(third.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 3 }))
         XCTAssertTrue(fourth.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
-        XCTAssertEqual(snapshot.state.streakProgress["weekly-practice"]?.currentLength, 4)
+        XCTAssertEqual(
+            RewardEngine.streakLength(for: snapshot.config.streaks[0], snapshot: snapshot, at: weekFour, calendar: calendar),
+            4
+        )
     }
 
     func testEveryTwoDaysStreakUsesTwoDayPeriods() {
         var snapshot = GameSnapshot.seed
-        snapshot.config.treasureChest.isEnabled = false
+        snapshot.config.randomDrops.isEnabled = false
         snapshot.config.streaks = [
             StreakDefinition(
                 id: "every-two-days",
@@ -90,12 +93,15 @@ final class RewardEngineTests: XCTestCase {
 
         XCTAssertFalse(second.events.contains(where: { $0.kind == .dailyStreak }))
         XCTAssertTrue(third.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
-        XCTAssertEqual(snapshot.state.streakProgress["every-two-days"]?.currentLength, 2)
+        XCTAssertEqual(
+            RewardEngine.streakLength(for: snapshot.config.streaks[0], snapshot: snapshot, at: nextPeriod, calendar: calendar),
+            2
+        )
     }
 
     func testStreakIgnoresActivitiesOutsideConfiguredSet() {
         var snapshot = GameSnapshot.seed
-        snapshot.config.treasureChest.isEnabled = false
+        snapshot.config.randomDrops.isEnabled = false
         snapshot.config.streaks = [
             StreakDefinition(
                 id: "warmup-only",
@@ -117,7 +123,14 @@ final class RewardEngineTests: XCTestCase {
         )
 
         XCTAssertFalse(result.events.contains(where: { $0.kind == .dailyStreak }))
-        XCTAssertNil(snapshot.state.streakProgress["warmup-only"])
+        XCTAssertEqual(
+            RewardEngine.streakLength(
+                for: snapshot.config.streaks[0],
+                snapshot: snapshot,
+                at: Date(timeIntervalSince1970: 1_700_000_000)
+            ),
+            0
+        )
     }
 
     func testCashOutUsesWatermarkInsteadOfReducingBalance() {
@@ -135,5 +148,117 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertNil(secondCashOut)
         XCTAssertEqual(snapshot.state.cashedOutCoinsWatermark, 4)
         XCTAssertEqual(snapshot.state.cashedOutDollars, 0.2, accuracy: 0.0001)
+    }
+
+    func testCompletionRecordsActivityHistoryAndRewardProvenance() {
+        var snapshot = GameSnapshot.seed
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+
+        let result = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: now, roll: 1)
+
+        XCTAssertEqual(snapshot.state.activityEvents.count, 1)
+        XCTAssertEqual(snapshot.state.activityEvents[0].activityID, "song-practice")
+        XCTAssertEqual(snapshot.state.activityEvents[0].activityTitle, "Song Practice")
+        XCTAssertEqual(snapshot.state.activityEvents[0].createdAt, now)
+        XCTAssertEqual(result.events.first?.activityEventID, snapshot.state.activityEvents[0].id)
+        XCTAssertEqual(snapshot.state.rewardEvents, result.events)
+    }
+
+    func testRewindRecordsActualDeltaWithoutTakingBalanceNegative() {
+        var snapshot = GameSnapshot.seed
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now, roll: 1)
+
+        let rewind = RewardEngine.adjustCoins(snapshot: &snapshot, delta: -5, reason: "Correction")
+
+        XCTAssertEqual(rewind?.coins, -1)
+        XCTAssertEqual(snapshot.state.coinBalance, 0)
+    }
+
+    func testLegacySnapshotMigratesLedgerAndTheme() throws {
+        let json = """
+        {
+          "config": {
+            "theme": "coinGarden",
+            "speechEnabled": false,
+            "masterPassword": "1234",
+            "activities": [],
+            "comboMilestones": [],
+            "streaks": [],
+            "achievements": [],
+            "treasureChest": {
+              "isEnabled": true,
+              "minDailyStreak": 2,
+              "minDailyCompletions": 2,
+              "chance": 0.35,
+              "minCoins": 3,
+              "maxCoins": 7
+            },
+            "economy": {
+              "coinsPerDollar": 20
+            }
+          },
+          "state": {
+            "suspiciousTapCount": 1,
+            "cashedOutDollars": 0,
+            "unlockedAchievementIDs": ["legacy-achievement"],
+            "ledger": [
+              {
+                "id": "00000000-0000-0000-0000-000000000001",
+                "createdAt": "2023-11-14T22:13:20Z",
+                "title": "Old Reward",
+                "detail": "Imported from the previous format.",
+                "coins": 2,
+                "balanceAfter": 2,
+                "kind": "structured"
+              }
+            ]
+          }
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let snapshot = try decoder.decode(GameSnapshot.self, from: Data(json.utf8))
+
+        XCTAssertEqual(snapshot.config.theme, .coins)
+        XCTAssertEqual(snapshot.state.rewardEvents.filter { $0.kind == .structured }.count, 1)
+        XCTAssertEqual(snapshot.state.rewardEvents.filter { $0.kind == .achievement }.count, 1)
+        XCTAssertEqual(snapshot.state.coinBalance, 2)
+        XCTAssertEqual(snapshot.state.suspiciousTapCount, 1)
+        XCTAssertTrue(snapshot.state.unlockedAchievementIDs.contains("legacy-achievement"))
+    }
+
+    func testSnapshotRoundTripPreservesEventHistories() throws {
+        var snapshot = GameSnapshot.seed
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now, roll: 1)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now.addingTimeInterval(30), roll: 1)
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(snapshot)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        XCTAssertEqual(try decoder.decode(GameSnapshot.self, from: data), snapshot)
+    }
+
+    func testMalformedRandomDropBoundsAreClamped() {
+        var snapshot = GameSnapshot.seed
+        snapshot.config.randomDrops.minDailyStreak = 1
+        snapshot.config.randomDrops.minDailyCompletions = 1
+        snapshot.config.randomDrops.chance = 2
+        snapshot.config.randomDrops.minCoins = 5
+        snapshot.config.randomDrops.maxCoins = -1
+
+        let result = RewardEngine.complete(
+            activityID: "warmup",
+            snapshot: &snapshot,
+            now: Date(timeIntervalSince1970: 1_700_000_000),
+            roll: 1
+        )
+
+        XCTAssertTrue(result.events.contains(where: { $0.kind == .treasureChest && $0.coins == 5 }))
     }
 }

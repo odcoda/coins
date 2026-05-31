@@ -73,9 +73,25 @@ generated and installed the first ios app icon:
 Up next:
 - try the app on a physical iphone
 
+## 2026-05-25 architecture review
+reviewed the current ios app structure and reward-state flow:
+- mapped the model, engine, store, persistence, and SwiftUI screen boundaries
+- identified persistence and configuration gaps for follow-up review
+Up next:
+- address the highest-risk review findings
+
 ## 2026-05-30 xcode target inspector crash
 fixed Xcode 15.4 project metadata generation:
 - replaced the patched Xcode 16 project format with XcodeGen's native Xcode 15.3 format
 - removed the explicit blank development team so signing can be configured in Xcode
 Up next:
 - select a development team and run the app on an iphone
+
+## 2026-05-31 event-backed game state
+simplified the game-state model around immutable histories:
+- replaced cached progress, streak, unlock, balance, and ledger fields with derived values
+- recorded completed activities, rewards, denied lockout taps, and reward provenance
+- migrated old json ledger exports and fixed local iso8601 snapshot loading
+- verified 11 reward-engine tests on the iphone 15 simulator
+Up next:
+- decide whether server sync needs config revision history

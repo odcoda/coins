@@ -106,69 +106,6 @@ struct StreakDefinition: Identifiable, Codable, Hashable {
     var symbol: String = "flame.fill"
 }
 
-enum AchievementCategory: String, Codable, CaseIterable, Identifiable {
-    case milestones
-    case lessonPatterns
-    case calendarSurprises
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .milestones:
-            return "Milestones"
-        case .lessonPatterns:
-            return "Lesson Patterns"
-        case .calendarSurprises:
-            return "Calendar Surprises"
-        }
-    }
-}
-
-enum AchievementRule: Codable, Hashable {
-    case totalCompletions(Int)
-    case lifetimeCoins(Int)
-    case dailyStreak(Int)
-    case anyActivityCompletions(Int)
-    case dailyCompletions(Int)
-    case distinctActivitiesToday(Int)
-    case allActivitiesToday
-    case configuredActivitiesInOrderToday
-    case configuredActivitiesInReverseOrderToday
-    case sameActivityInARow(Int)
-    case alternatingActivitiesInARow(Int)
-    case roundTrip
-    case beforeHour(Int)
-    case afterHour(Int)
-    case duringHour(Int)
-    case weekday(Int)
-    case weekend
-    case dayOfMonth(Int)
-    case lastDayOfMonth
-    case fridayThe13th
-    case leapDay
-    case palindromeDate
-}
-
-struct AchievementDefinition: Identifiable, Codable, Hashable {
-    var id: String
-    var title: String
-    var detail: String
-    var category: AchievementCategory
-    var rule: AchievementRule
-    var rewardCoins: Int
-    var symbol: String
-}
-
-struct RandomDropConfig: Codable, Hashable {
-    var isEnabled: Bool
-    var minDailyStreak: Int
-    var minDailyCompletions: Int
-    var chance: Double
-    var minCoins: Int
-    var maxCoins: Int
-}
-
 struct EconomyConfig: Codable, Hashable {
     var coinsPerDollar: Double
 }
@@ -180,8 +117,6 @@ struct GameConfig: Codable, Hashable {
     var activities: [ActivityDefinition]
     var dailyCompletionBonuses: [DailyDefinition]
     var streaks: [StreakDefinition]
-    var achievements: [AchievementDefinition]
-    var randomDrops: RandomDropConfig
     var economy: EconomyConfig
 }
 
@@ -189,8 +124,6 @@ enum RewardKind: String, Codable {
     case structured
     case combo
     case dailyStreak
-    case treasureChest
-    case achievement
     case adjustment
     case cashOut
 }
@@ -325,15 +258,6 @@ extension GameSnapshot {
                     symbol: "sun.max.fill"
                 )
             ],
-            achievements: AchievementCatalog.defaultAchievements,
-            randomDrops: RandomDropConfig(
-                isEnabled: true,
-                minDailyStreak: 2,
-                minDailyCompletions: 2,
-                chance: 0.35,
-                minCoins: 3,
-                maxCoins: 7
-            ),
             economy: EconomyConfig(coinsPerDollar: 20)
         ),
         state: GameState()
@@ -381,14 +305,6 @@ extension GameState {
 
     var dailyStreak: Int {
         activeDailyStreak(at: .now)
-    }
-
-    var unlockedAchievementIDs: Set<String> {
-        Set(
-            rewardEvents.compactMap { event in
-                event.kind == .achievement ? event.definitionID : nil
-            }
-        )
     }
 
     var rewardHistory: [RewardHistoryEntry] {

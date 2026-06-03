@@ -1,5 +1,4 @@
 import XCTest
-import UIKit
 @testable import Coins
 
 final class RewardEngineTests: XCTestCase {
@@ -7,8 +6,8 @@ final class RewardEngineTests: XCTestCase {
         var snapshot = GameSnapshot.seed
         let now = Date(timeIntervalSince1970: 1_700_000_000)
 
-        let first = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now, roll: 1)
-        let second = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now.addingTimeInterval(30), roll: 1)
+        let first = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now)
+        let second = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now.addingTimeInterval(30))
 
         XCTAssertFalse(first.isDenied)
         XCTAssertTrue(second.isDenied)
@@ -23,10 +22,10 @@ final class RewardEngineTests: XCTestCase {
         let dayTwo = dayOne.addingTimeInterval(86_400)
         let dayThree = dayTwo.addingTimeInterval(86_400)
 
-        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne, roll: 1, calendar: calendar)
-        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne.addingTimeInterval(301), roll: 1, calendar: calendar)
-        _ = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: dayTwo, roll: 1, calendar: calendar)
-        let result = RewardEngine.complete(activityID: "sight-reading", snapshot: &snapshot, now: dayThree, roll: 1, calendar: calendar)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne, calendar: calendar)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne.addingTimeInterval(301), calendar: calendar)
+        _ = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: dayTwo, calendar: calendar)
+        let result = RewardEngine.complete(activityID: "sight-reading", snapshot: &snapshot, now: dayThree, calendar: calendar)
 
         XCTAssertEqual(snapshot.state.activeDailyStreak(at: dayThree, calendar: calendar), 3)
         XCTAssertTrue(result.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
@@ -35,7 +34,6 @@ final class RewardEngineTests: XCTestCase {
 
     func testWeeklyStreakExtraRewardGrowsAfterMinimum() {
         var snapshot = GameSnapshot.seed
-        snapshot.config.randomDrops.isEnabled = false
         snapshot.config.streaks = [
             StreakDefinition(
                 id: "weekly-practice",
@@ -55,10 +53,10 @@ final class RewardEngineTests: XCTestCase {
         let weekThree = weekTwo.addingTimeInterval(7 * 86_400)
         let weekFour = weekThree.addingTimeInterval(7 * 86_400)
 
-        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekOne, roll: 1, calendar: calendar)
-        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekTwo, roll: 1, calendar: calendar)
-        let third = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekThree, roll: 1, calendar: calendar)
-        let fourth = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekFour, roll: 1, calendar: calendar)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekOne, calendar: calendar)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekTwo, calendar: calendar)
+        let third = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekThree, calendar: calendar)
+        let fourth = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: weekFour, calendar: calendar)
 
         XCTAssertTrue(third.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 3 }))
         XCTAssertTrue(fourth.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
@@ -70,7 +68,6 @@ final class RewardEngineTests: XCTestCase {
 
     func testEveryTwoDaysStreakUsesTwoDayPeriods() {
         var snapshot = GameSnapshot.seed
-        snapshot.config.randomDrops.isEnabled = false
         snapshot.config.streaks = [
             StreakDefinition(
                 id: "every-two-days",
@@ -89,9 +86,9 @@ final class RewardEngineTests: XCTestCase {
         let samePeriod = dayOne.addingTimeInterval(86_400)
         let nextPeriod = dayOne.addingTimeInterval(2 * 86_400)
 
-        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne, roll: 1, calendar: calendar)
-        let second = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: samePeriod, roll: 1, calendar: calendar)
-        let third = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: nextPeriod, roll: 1, calendar: calendar)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne, calendar: calendar)
+        let second = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: samePeriod, calendar: calendar)
+        let third = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: nextPeriod, calendar: calendar)
 
         XCTAssertFalse(second.events.contains(where: { $0.kind == .dailyStreak }))
         XCTAssertTrue(third.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
@@ -103,7 +100,6 @@ final class RewardEngineTests: XCTestCase {
 
     func testStreakIgnoresActivitiesOutsideConfiguredSet() {
         var snapshot = GameSnapshot.seed
-        snapshot.config.randomDrops.isEnabled = false
         snapshot.config.streaks = [
             StreakDefinition(
                 id: "warmup-only",
@@ -117,20 +113,12 @@ final class RewardEngineTests: XCTestCase {
             )
         ]
 
-        let result = RewardEngine.complete(
-            activityID: "song-practice",
-            snapshot: &snapshot,
-            now: Date(timeIntervalSince1970: 1_700_000_000),
-            roll: 1
-        )
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let result = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: now)
 
         XCTAssertFalse(result.events.contains(where: { $0.kind == .dailyStreak }))
         XCTAssertEqual(
-            RewardEngine.streakLength(
-                for: snapshot.config.streaks[0],
-                snapshot: snapshot,
-                at: Date(timeIntervalSince1970: 1_700_000_000)
-            ),
+            RewardEngine.streakLength(for: snapshot.config.streaks[0], snapshot: snapshot, at: now),
             0
         )
     }
@@ -139,8 +127,8 @@ final class RewardEngineTests: XCTestCase {
         var snapshot = GameSnapshot.seed
         let start = Date(timeIntervalSince1970: 1_700_000_000)
 
-        _ = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: start, roll: 1)
-        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: start.addingTimeInterval(301), roll: 1)
+        _ = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: start)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: start.addingTimeInterval(301))
 
         let cashOut = RewardEngine.cashOut(snapshot: &snapshot, now: start.addingTimeInterval(600))
         let secondCashOut = RewardEngine.cashOut(snapshot: &snapshot, now: start.addingTimeInterval(900))
@@ -156,7 +144,7 @@ final class RewardEngineTests: XCTestCase {
         var snapshot = GameSnapshot.seed
         let now = Date(timeIntervalSince1970: 1_700_000_000)
 
-        let result = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: now, roll: 1)
+        let result = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: now)
 
         XCTAssertEqual(snapshot.state.activityEvents.count, 1)
         XCTAssertEqual(snapshot.state.activityEvents[0].activityID, "song-practice")
@@ -169,7 +157,7 @@ final class RewardEngineTests: XCTestCase {
     func testRewindRecordsActualDeltaWithoutTakingBalanceNegative() {
         var snapshot = GameSnapshot.seed
         let now = Date(timeIntervalSince1970: 1_700_000_000)
-        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now, roll: 1)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now)
 
         let rewind = RewardEngine.adjustCoins(snapshot: &snapshot, delta: -5, reason: "Correction")
 
@@ -180,8 +168,8 @@ final class RewardEngineTests: XCTestCase {
     func testSnapshotRoundTripPreservesEventHistories() throws {
         var snapshot = GameSnapshot.seed
         let now = Date(timeIntervalSince1970: 1_700_000_000)
-        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now, roll: 1)
-        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now.addingTimeInterval(30), roll: 1)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now.addingTimeInterval(30))
 
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -190,109 +178,5 @@ final class RewardEngineTests: XCTestCase {
         decoder.dateDecodingStrategy = .iso8601
 
         XCTAssertEqual(try decoder.decode(GameSnapshot.self, from: data), snapshot)
-    }
-
-    func testMalformedRandomDropBoundsAreClamped() {
-        var snapshot = GameSnapshot.seed
-        snapshot.config.randomDrops.minDailyStreak = 1
-        snapshot.config.randomDrops.minDailyCompletions = 1
-        snapshot.config.randomDrops.chance = 2
-        snapshot.config.randomDrops.minCoins = 5
-        snapshot.config.randomDrops.maxCoins = -1
-
-        let result = RewardEngine.complete(
-            activityID: "warmup",
-            snapshot: &snapshot,
-            now: Date(timeIntervalSince1970: 1_700_000_000),
-            roll: 1
-        )
-
-        XCTAssertTrue(result.events.contains(where: { $0.kind == .treasureChest && $0.coins == 5 }))
-    }
-
-    func testAchievementCatalogHasManySpecialOptions() {
-        XCTAssertGreaterThanOrEqual(AchievementCatalog.all.count, 20)
-        XCTAssertTrue(AchievementCatalog.all.contains { $0.rule == .configuredActivitiesInReverseOrderToday })
-        XCTAssertTrue(AchievementCatalog.all.contains { $0.rule == .fridayThe13th })
-        XCTAssertTrue(AchievementCatalog.all.contains { $0.rule == .palindromeDate })
-        for achievement in AchievementCatalog.all {
-            XCTAssertNotNil(UIImage(systemName: achievement.symbol), achievement.symbol)
-        }
-    }
-
-    func testReverseLessonAchievementUnlocksFromTodaysActivityOrder() {
-        var snapshot = snapshotWithAchievement("lesson-backwards")
-        let calendar = Calendar(identifier: .gregorian)
-        let start = date(year: 2026, month: 5, day: 15, hour: 15, calendar: calendar)
-
-        _ = RewardEngine.complete(activityID: "sight-reading", snapshot: &snapshot, now: start, roll: 1, calendar: calendar)
-        _ = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: start.addingTimeInterval(60), roll: 1, calendar: calendar)
-        let result = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: start.addingTimeInterval(120), roll: 1, calendar: calendar)
-
-        XCTAssertTrue(result.events.contains { $0.kind == .achievement && $0.definitionID == "lesson-backwards" })
-    }
-
-    func testReverseLessonAchievementDoesNotUsePriorDayEvents() {
-        var snapshot = snapshotWithAchievement("lesson-backwards")
-        let calendar = Calendar(identifier: .gregorian)
-        let dayOne = date(year: 2026, month: 5, day: 15, hour: 15, calendar: calendar)
-        let dayTwo = date(year: 2026, month: 5, day: 16, hour: 15, calendar: calendar)
-
-        _ = RewardEngine.complete(activityID: "sight-reading", snapshot: &snapshot, now: dayOne, roll: 1, calendar: calendar)
-        _ = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: dayTwo, roll: 1, calendar: calendar)
-        let result = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayTwo.addingTimeInterval(60), roll: 1, calendar: calendar)
-
-        XCTAssertFalse(result.events.contains { $0.kind == .achievement && $0.definitionID == "lesson-backwards" })
-    }
-
-    func testFridayTheThirteenthAchievementUnlocks() {
-        var snapshot = snapshotWithAchievement("friday-13")
-        let calendar = Calendar(identifier: .gregorian)
-        let fridayTheThirteenth = date(year: 2024, month: 9, day: 13, hour: 15, calendar: calendar)
-
-        let result = RewardEngine.complete(
-            activityID: "warmup",
-            snapshot: &snapshot,
-            now: fridayTheThirteenth,
-            roll: 1,
-            calendar: calendar
-        )
-
-        XCTAssertTrue(result.events.contains { $0.kind == .achievement && $0.definitionID == "friday-13" && $0.coins == 13 })
-    }
-
-    func testDisabledAchievementDoesNotUnlock() {
-        var snapshot = snapshotWithAchievement(nil)
-        let calendar = Calendar(identifier: .gregorian)
-        let fridayTheThirteenth = date(year: 2024, month: 9, day: 13, hour: 15, calendar: calendar)
-
-        let result = RewardEngine.complete(
-            activityID: "warmup",
-            snapshot: &snapshot,
-            now: fridayTheThirteenth,
-            roll: 1,
-            calendar: calendar
-        )
-
-        XCTAssertFalse(result.events.contains { $0.kind == .achievement })
-    }
-
-    private func snapshotWithAchievement(_ id: String?) -> GameSnapshot {
-        var snapshot = GameSnapshot.seed
-        snapshot.config.dailyCompletionBonuses = []
-        snapshot.config.streaks = []
-        snapshot.config.randomDrops.isEnabled = false
-        snapshot.config.achievements = id.map { AchievementCatalog.enabledAchievements(withIDs: [$0]) } ?? []
-        return snapshot
-    }
-
-    private func date(
-        year: Int,
-        month: Int,
-        day: Int,
-        hour: Int,
-        calendar: Calendar
-    ) -> Date {
-        calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
     }
 }

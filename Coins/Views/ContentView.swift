@@ -529,12 +529,10 @@ private struct TrackingPage: View {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 105), spacing: 12)], spacing: 12) {
                     statCard(title: "Today", value: "\(store.snapshot.state.dailyCompletionCount)", note: "completions")
                     statCard(title: "Lifetime", value: "\(store.snapshot.state.lifetimeCoins)", note: "coins earned")
-                    statCard(title: "Unlocked", value: "\(store.snapshot.state.unlockedAchievementIDs.count)", note: "achievements")
                 }
 
                 rewardsByDayChart
                 cumulativeChart
-                achievementsSection
                 ledgerSection
             }
             .padding(20)
@@ -613,42 +611,6 @@ private struct TrackingPage: View {
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
-    }
-
-    private var achievementsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Achievements")
-                .font(.title2.weight(.bold))
-
-            if store.unlockedAchievements.isEmpty {
-                Text("No trophies yet. Keep the streak going.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            } else {
-                ForEach(store.unlockedAchievements) { achievement in
-                    HStack {
-                        Image(systemName: achievement.symbol)
-                            .foregroundStyle(style.accent)
-                        VStack(alignment: .leading) {
-                            Text(achievement.title)
-                                .fontWeight(.semibold)
-                            Text(achievement.detail)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Text("+\(achievement.rewardCoins)")
-                            .fontWeight(.bold)
-                            .foregroundStyle(style.accent)
-                    }
-                    .padding(16)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                }
-            }
-        }
     }
 
     private var ledgerSection: some View {

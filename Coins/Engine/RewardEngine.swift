@@ -5,8 +5,6 @@ enum RewardEngine {
         activityID: String,
         snapshot: inout GameSnapshot,
         now: Date = .now,
-        roll: Double? = nil,
-        chestCoins: Int? = nil,
         calendar: Calendar = .current
     ) -> CompletionResult {
         guard let activity = snapshot.config.activities.first(where: { $0.id == activityID }) else {
@@ -73,29 +71,6 @@ enum RewardEngine {
             contentsOf: updateConfiguredStreaks(
                 snapshot: &snapshot,
                 activityEvent: activityEvent,
-                now: now,
-                calendar: calendar
-            )
-        )
-
-        if let chestCoins = treasureChestCoins(snapshot: snapshot, now: now, roll: roll, chestCoins: chestCoins, calendar: calendar) {
-            events.append(
-                recordReward(
-                    title: "Treasure Chest",
-                    detail: "A surprise reward dropped.",
-                    coins: chestCoins,
-                    kind: .treasureChest,
-                    activityEventID: activityEvent.id,
-                    snapshot: &snapshot,
-                    now: now
-                )
-            )
-        }
-
-        events.append(
-            contentsOf: unlockAchievements(
-                snapshot: &snapshot,
-                activityEventID: activityEvent.id,
                 now: now,
                 calendar: calendar
             )
@@ -232,59 +207,6 @@ enum RewardEngine {
                     now: now
                 )
             )
-        }
-
-        return events
-    }
-
-    private static func treasureChestCoins(
-        snapshot: GameSnapshot,
-        now: Date,
-        roll: Double?,
-        chestCoins: Int?,
-        calendar: Calendar
-    ) -> Int? {
-        let config = snapshot.config.randomDrops
-        guard config.isEnabled else { return nil }
-        guard snapshot.state.activeDailyStreak(at: now, calendar: calendar) >= config.minDailyStreak else { return nil }
-        guard snapshot.state.dailyCompletionCount(at: now, calendar: calendar) >= config.minDailyCompletions else { return nil }
-
-        let draw = roll ?? Double.random(in: 0...1)
-        guard draw <= min(max(config.chance, 0), 1) else { return nil }
-
-        let minimumCoins = max(config.minCoins, 0)
-        let maximumCoins = max(config.maxCoins, minimumCoins)
-        return max(chestCoins ?? Int.random(in: minimumCoins...maximumCoins), 0)
-    }
-
-    private static func unlockAchievements(
-        snapshot: inout GameSnapshot,
-        activityEventID: UUID,
-        now: Date,
-        calendar: Calendar
-    ) -> [RewardEvent] {
-        var events: [RewardEvent] = []
-        let context = AchievementEvaluationContext(snapshot: snapshot, at: now, calendar: calendar)
-        var unlockedAchievementIDs = context.unlockedAchievementIDs
-
-        for achievement in snapshot.config.achievements where !unlockedAchievementIDs.contains(achievement.id) {
-            guard achievement.rule.isSatisfied(in: context) else {
-                continue
-            }
-
-            events.append(
-                recordReward(
-                    title: achievement.title,
-                    detail: achievement.detail,
-                    coins: achievement.rewardCoins,
-                    kind: .achievement,
-                    activityEventID: activityEventID,
-                    definitionID: achievement.id,
-                    snapshot: &snapshot,
-                    now: now
-                )
-            )
-            unlockedAchievementIDs.insert(achievement.id)
         }
 
         return events

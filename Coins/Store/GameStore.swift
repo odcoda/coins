@@ -32,14 +32,6 @@ final class GameStore: ObservableObject {
         snapshot.config.activities
     }
 
-    var achievements: [AchievementDefinition] {
-        snapshot.config.achievements
-    }
-
-    var unlockedAchievements: [AchievementDefinition] {
-        achievements.filter { snapshot.state.unlockedAchievementIDs.contains($0.id) }
-    }
-
     @discardableResult
     func complete(_ activity: ActivityDefinition) -> CompletionResult {
         var updated = snapshot

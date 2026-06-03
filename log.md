@@ -119,3 +119,10 @@ expanded achievements beyond simple counters:
 - verified 15 reward-engine tests on the iphone 15 simulator
 Up next:
 - polish achievement celebration presentation
+
+## 2026-06-03 reward scope cleanup
+removed prototype scope creep from rewards:
+- deleted achievements and treasure chest random drops
+- kept activities, daily bonuses, streaks, cash-out, and reward history
+Up next:
+- rebuild on the simulator and keep tuning the core daily loop

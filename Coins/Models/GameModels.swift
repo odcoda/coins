@@ -363,6 +363,27 @@ struct ActivityHistoryDay: Identifiable, Hashable {
     }
 }
 
+enum HistoryRewardEstimator {
+    static func coins(for countsByActivityID: [String: Int], activities: [ActivityDefinition]) -> Int {
+        activities.reduce(0) { total, activity in
+            let count = min(max(countsByActivityID[activity.id, default: 0], 0), 50)
+            let structuredRewards = count * activity.baseReward
+            let repetitionRewards = activity.repetitionBonusPreset.thresholds.reduce(0) { bonusTotal, threshold in
+                threshold.completionCount <= count ? bonusTotal + threshold.coins : bonusTotal
+            }
+            return total + structuredRewards + repetitionRewards
+        }
+    }
+
+    static func delta(
+        from originalCounts: [String: Int],
+        to newCounts: [String: Int],
+        activities: [ActivityDefinition]
+    ) -> Int {
+        coins(for: newCounts, activities: activities) - coins(for: originalCounts, activities: activities)
+    }
+}
+
 struct GameState: Codable, Hashable {
     var activityEvents: [ActivityEvent] = []
     var rewardEvents: [RewardEvent] = []

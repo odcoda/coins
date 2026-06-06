@@ -303,6 +303,48 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertEqual(warmupEvents.compactMap(\.timestamp), [day.addingTimeInterval(60)])
     }
 
+    func testHistoryRewardEstimatorUsesCurrentBaseRewardsAndRepetitionBonuses() {
+        var snapshot = GameSnapshot.seed
+        snapshot.config.activities[0].baseReward = 2
+        snapshot.config.activities[0].repetitionBonusPreset = .high3x
+        snapshot.config.activities[1].baseReward = 4
+        snapshot.config.activities[1].repetitionBonusPreset = .medium5x
+
+        let coins = HistoryRewardEstimator.coins(
+            for: [
+                "warmup": 6,
+                "song-practice": 5
+            ],
+            activities: snapshot.config.activities
+        )
+
+        XCTAssertEqual(coins, 36)
+    }
+
+    func testHistoryRewardEstimatorDeltaIgnoresStreakRewards() {
+        var snapshot = GameSnapshot.seed
+        snapshot.config.activities[0].baseReward = 1
+        snapshot.config.activities[0].repetitionBonusPreset = .high3x
+        snapshot.config.streaks = [
+            StreakDefinition(
+                id: "daily-practice",
+                title: "Daily Practice",
+                detail: "Practice daily.",
+                activityIDs: ["warmup"],
+                dailyMinimum: 1,
+                bonusPreset: .noBreaks
+            )
+        ]
+
+        let delta = HistoryRewardEstimator.delta(
+            from: ["warmup": 2],
+            to: ["warmup": 3],
+            activities: snapshot.config.activities
+        )
+
+        XCTAssertEqual(delta, 2)
+    }
+
     func testManuallyAddedHistoryCountsTowardFutureStreakLogic() {
         var snapshot = GameSnapshot.seed
         snapshot.config.streaks = [

@@ -219,3 +219,12 @@ split up Game Master controls:
 - verified 15 reward-engine tests on iPhone 13 mini
 Up next:
 - manually try the new Game Master flows on iPhone 13 mini
+
+## 2026-06-06 history balance correction
+added balance-aware history saves:
+- added a second history-save action that applies the estimated base and repetition reward delta
+- opened the day editor sheet at full height so controls are not initially cramped
+- added reward estimator tests for current settings and no-streak corrections
+- verified 17 reward-engine tests on iPhone 13 mini
+Up next:
+- try a negative correction on device to confirm the wording feels clear

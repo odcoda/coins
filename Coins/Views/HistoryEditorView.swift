@@ -8,7 +8,7 @@ struct HistoryEditorView: View {
     @State private var selectedDay: ActivityHistoryDay?
     @State private var editingDate: Date?
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
+    private let gridSpacing: CGFloat = 6
 
     private var calendar: Calendar {
         var calendar = Calendar.current
@@ -60,17 +60,28 @@ struct HistoryEditorView: View {
                 )
                 .datePickerStyle(.compact)
 
-                weekdayHeader
+                GeometryReader { proxy in
+                    let cellSize = floor((proxy.size.width - gridSpacing * 6) / 7)
+                    let columns = Array(
+                        repeating: GridItem(.fixed(cellSize), spacing: gridSpacing),
+                        count: 7
+                    )
 
-                LazyVGrid(columns: columns, spacing: 6) {
-                    ForEach(Array(gridDays.enumerated()), id: \.offset) { _, date in
-                        if let date {
-                            dayCell(for: date)
-                        } else {
-                            Color.clear
-                                .aspectRatio(1, contentMode: .fit)
+                    VStack(spacing: gridSpacing) {
+                        weekdayHeader(columns: columns)
+
+                        LazyVGrid(columns: columns, spacing: gridSpacing) {
+                            ForEach(Array(gridDays.enumerated()), id: \.offset) { _, date in
+                                if let date {
+                                    dayCell(for: date, size: cellSize)
+                                } else {
+                                    Color.clear
+                                        .frame(width: cellSize, height: cellSize)
+                                }
+                            }
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
 
                 Spacer(minLength: 0)
@@ -85,15 +96,16 @@ struct HistoryEditorView: View {
                     }
                 }
             }
-            .popover(item: $selectedDay) { day in
-                DayActivityPopover(
+            .sheet(item: $selectedDay) { day in
+                DayActivitySheet(
                     day: day,
                     activities: store.snapshot.config.activities
                 ) {
                     editingDate = day.date
                     selectedDay = nil
                 }
-                .presentationCompactAdaptation(.popover)
+                .presentationDetents([.height(320), .medium])
+                .presentationDragIndicator(.visible)
             }
             .fullScreenCover(item: editingDateBinding) { editableDate in
                 PerDateHistoryEditorView(date: editableDate.date)
@@ -102,8 +114,8 @@ struct HistoryEditorView: View {
         }
     }
 
-    private var weekdayHeader: some View {
-        LazyVGrid(columns: columns, spacing: 6) {
+    private func weekdayHeader(columns: [GridItem]) -> some View {
+        LazyVGrid(columns: columns, spacing: gridSpacing) {
             ForEach(shortWeekdaySymbols, id: \.self) { symbol in
                 Text(symbol)
                     .font(.caption.weight(.bold))
@@ -119,25 +131,19 @@ struct HistoryEditorView: View {
         return Array(symbols[firstIndex...] + symbols[..<firstIndex])
     }
 
-    private func dayCell(for date: Date) -> some View {
+    private func dayCell(for date: Date, size: CGFloat) -> some View {
         let day = daysByStartOfDay[calendar.startOfDay(for: date)] ?? ActivityHistoryDay(date: date, countsByActivityID: [:])
         let intensity = Double(day.totalCount) / Double(maxCount)
 
         return Button {
             selectedDay = day
         } label: {
-            VStack(spacing: 4) {
-                Text("\(calendar.component(.day, from: date))")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(day.totalCount > 0 ? .white : .secondary)
-                if day.totalCount > 0 {
-                    Text("\(day.totalCount)")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.92))
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .aspectRatio(1, contentMode: .fit)
+            Text("\(calendar.component(.day, from: date))")
+                .font(.caption.weight(.bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .foregroundStyle(day.totalCount > 0 ? .white : .secondary)
+                .frame(width: size, height: size)
             .background(dayColor(for: intensity, hasActivity: day.totalCount > 0), in: RoundedRectangle(cornerRadius: 6))
             .overlay {
                 RoundedRectangle(cornerRadius: 6)
@@ -181,7 +187,9 @@ private struct EditableDate: Identifiable {
     }
 }
 
-private struct DayActivityPopover: View {
+private struct DayActivitySheet: View {
+    @Environment(\.dismiss) private var dismiss
+
     let day: ActivityHistoryDay
     let activities: [ActivityDefinition]
     let onEdit: () -> Void
@@ -191,37 +199,44 @@ private struct DayActivityPopover: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(dateText)
-                .font(.headline)
-
-            if day.totalCount == 0 {
-                Text("No recorded activities.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(activities) { activity in
-                        let count = day.countsByActivityID[activity.id, default: 0]
-                        if count > 0 {
-                            Label("\(activity.title): \(count)", systemImage: activity.symbol)
-                                .font(.subheadline)
+        NavigationStack {
+            List {
+                Section(dateText) {
+                    if day.totalCount == 0 {
+                        Text("No recorded activities.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(activities) { activity in
+                            let count = day.countsByActivityID[activity.id, default: 0]
+                            if count > 0 {
+                                Label("\(activity.title): \(count)", systemImage: activity.symbol)
+                            }
                         }
                     }
                 }
-            }
 
-            Button {
-                onEdit()
-            } label: {
-                Label("Edit Day", systemImage: "pencil")
-                    .frame(maxWidth: .infinity)
+                Section {
+                    Button {
+                        onEdit()
+                    } label: {
+                        Label("Edit Day", systemImage: "pencil")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .navigationTitle("Day History")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
         }
-        .padding(16)
-        .frame(width: 280)
     }
 }
 

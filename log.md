@@ -194,3 +194,11 @@ added password-gated activity history repair:
 - verified 15 reward-engine tests on iPhone 13 mini
 Up next:
 - try the history editor flow on device-sized screens
+
+## 2026-06-06 history editor ui fix
+repaired history editor presentation:
+- made calendar cells fixed-size square boxes
+- removed tiny per-cell count labels and kept activity volume in color intensity
+- replaced the cramped popover with a reachable bottom sheet
+Up next:
+- manually confirm the sheet handoff into the day editor

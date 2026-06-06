@@ -14,10 +14,13 @@ struct GameMasterView: View {
     @State private var isImporting = false
     @State private var importError: String?
     @State private var iconSelection: IconSelection?
+    @State private var isShowingSavedConfirmation = false
+    @State private var saveConfirmationNonce = 0
 
     private let rewardOptions = Array(0...50)
     private let lockoutOptions = Array(stride(from: 5, through: 60, by: 5)) + Array(stride(from: 120, through: 600, by: 60))
     private let dailyMinimumOptions = [1, 3, 5, 12, 20]
+    private let dailyMaximumOptions = [0, 1, 5, 12, 20]
     private let iconOptions = [
         IconOption(title: "Leaf", symbol: "leaf.fill"),
         IconOption(title: "Music", symbol: "music.note"),
@@ -30,7 +33,11 @@ struct GameMasterView: View {
         IconOption(title: "Book", symbol: "book.fill"),
         IconOption(title: "Pencil", symbol: "pencil"),
         IconOption(title: "Trophy", symbol: "trophy.fill"),
-        IconOption(title: "Target", symbol: "target")
+        IconOption(title: "Target", symbol: "target"),
+        IconOption(title: "Hand", symbol: "hand.raised.fill"),
+        IconOption(title: "Finger", symbol: "hand.point.up.fill"),
+        IconOption(title: "Piano", symbol: "pianokeys"),
+        IconOption(title: "Notes", symbol: "music.quarternote.3")
     ]
 
     var body: some View {
@@ -194,6 +201,20 @@ struct GameMasterView: View {
                             }
                         }
                         .pickerStyle(.menu)
+
+                        Picker("Repetition Bonus", selection: $activity.repetitionBonusPreset) {
+                            ForEach(DailyRepetitionBonusPreset.allCases) { preset in
+                                Text(preset.displayName).tag(preset)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        Picker("Daily Maximum", selection: $activity.dailyMaximum) {
+                            ForEach(dailyMaximumOptions(for: activity.dailyMaximum), id: \.self) { maximum in
+                                Text(dailyMaximumLabel(maximum)).tag(maximum)
+                            }
+                        }
+                        .pickerStyle(.menu)
                     }
                     .padding(.vertical, 6)
                 }
@@ -316,14 +337,40 @@ struct GameMasterView: View {
             Section("Password") {
                 SecureField("Game-master password", text: $draftConfig.masterPassword)
             }
-
-            Section {
-                Button("Save Configuration") {
-                    store.apply(config: sanitizedConfig())
-                }
-                .fontWeight(.bold)
-            }
         }
+        .safeAreaInset(edge: .bottom) {
+            saveBar
+        }
+    }
+
+    private var saveBar: some View {
+        VStack(spacing: 8) {
+            if isShowingSavedConfirmation {
+                Label("Configuration saved", systemImage: "checkmark.circle.fill")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.green)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            Button {
+                saveConfiguration()
+            } label: {
+                Label(
+                    isShowingSavedConfirmation ? "Saved" : "Save Configuration",
+                    systemImage: isShowingSavedConfirmation ? "checkmark.circle.fill" : "square.and.arrow.down.fill"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .fontWeight(.bold)
+            .buttonStyle(.borderedProminent)
+            .tint(isShowingSavedConfirmation ? .green : .orange)
+            .scaleEffect(isShowingSavedConfirmation ? 1.03 : 1)
+            .animation(.spring(response: 0.24, dampingFraction: 0.62), value: isShowingSavedConfirmation)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(.regularMaterial)
     }
 
     private func addActivity() {
@@ -333,8 +380,10 @@ struct GameMasterView: View {
                 title: "New Activity",
                 detail: "Describe the real-world activity.",
                 baseReward: 1,
-                lockoutSeconds: 60,
-                symbol: "checkmark.circle.fill"
+                lockoutSeconds: 5,
+                symbol: "checkmark.circle.fill",
+                repetitionBonusPreset: .high3x,
+                dailyMaximum: 0
             )
         )
     }
@@ -344,9 +393,6 @@ struct GameMasterView: View {
         draftConfig.activities.removeAll { $0.id == id }
         for index in draftConfig.streaks.indices {
             draftConfig.streaks[index].activityIDs.removeAll { $0 == id }
-        }
-        for index in draftConfig.dailyCompletionBonuses.indices {
-            draftConfig.dailyCompletionBonuses[index].activityIDs.removeAll { $0 == id }
         }
     }
 
@@ -366,6 +412,25 @@ struct GameMasterView: View {
 
     private func removeStreak(id: String) {
         draftConfig.streaks.removeAll { $0.id == id }
+    }
+
+    private func saveConfiguration() {
+        store.apply(config: sanitizedConfig())
+        saveConfirmationNonce += 1
+        let currentNonce = saveConfirmationNonce
+        withAnimation(.spring(response: 0.24, dampingFraction: 0.66)) {
+            isShowingSavedConfirmation = true
+        }
+
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            await MainActor.run {
+                guard saveConfirmationNonce == currentNonce else { return }
+                withAnimation(.easeOut(duration: 0.18)) {
+                    isShowingSavedConfirmation = false
+                }
+            }
+        }
     }
 
     private func activityIncludedBinding(for streak: Binding<StreakDefinition>, activityID: String) -> Binding<Bool> {
@@ -396,15 +461,12 @@ struct GameMasterView: View {
                 config.streaks[index].symbol = "flame.fill"
             }
         }
-        for index in config.dailyCompletionBonuses.indices {
-            config.dailyCompletionBonuses[index].threshold = max(config.dailyCompletionBonuses[index].threshold, 1)
-            config.dailyCompletionBonuses[index].rewardCoins = min(max(config.dailyCompletionBonuses[index].rewardCoins, 0), 50)
-            config.dailyCompletionBonuses[index].activityIDs = config.dailyCompletionBonuses[index].activityIDs.filter {
-                validActivityIDs.contains($0)
+        config.dailyCompletionBonuses = []
+        for index in config.activities.indices {
+            if config.activities[index].symbol.isEmpty {
+                config.activities[index].symbol = "checkmark.circle.fill"
             }
-        }
-        for index in config.activities.indices where config.activities[index].symbol.isEmpty {
-            config.activities[index].symbol = "checkmark.circle.fill"
+            config.activities[index].dailyMaximum = nearestDailyMaximum(to: config.activities[index].dailyMaximum)
         }
         return config
     }
@@ -431,6 +493,23 @@ struct GameMasterView: View {
             return "1 minute"
         }
         return "\(seconds / 60) minutes"
+    }
+
+    private func dailyMaximumOptions(for currentValue: Int) -> [Int] {
+        Array(Set(dailyMaximumOptions + [currentValue])).sorted()
+    }
+
+    private func nearestDailyMaximum(to value: Int) -> Int {
+        guard value > 0 else {
+            return 0
+        }
+        return dailyMaximumOptions.min { lhs, rhs in
+            abs(lhs - value) < abs(rhs - value)
+        } ?? 5
+    }
+
+    private func dailyMaximumLabel(_ maximum: Int) -> String {
+        return maximum == 0 ? "No limit" : "\(maximum) per day"
     }
 
     private func iconButton(symbol: String, accessibilityLabel: String, action: @escaping () -> Void) -> some View {

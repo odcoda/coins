@@ -56,11 +56,16 @@ configured coins-per-dollar ratio.
 Reward behavior lives in [RewardEngine.swift](Coins/Engine/RewardEngine.swift).
 The engine is intentionally deterministic when tests pass explicit dates.
 
-- `ActivityDefinition` gives the known structured reward and has its own lockout.
+- `ActivityDefinition` gives the known structured reward, lockout, repetition
+  bonus preset, and daily maximum.
+- Daily repetition bonuses are activity-scoped presets: high (3x), medium (5x),
+  or none.
+- Daily maximums can be 1, 5, 12, 20, or no limit, and only cap repetitions
+  within the same day.
 - `DailyDefinition` triggers from qualifying completions during the current day.
-- `StreakDefinition` triggers when its chosen activities meet the configured
-  daily minimum. Presets define 2-, 3-, 5-, and 7-day bonus tiers, with optional
-  break allowance after a tier has been earned.
+- `StreakDefinition` advances across days when its chosen activities meet the
+  configured daily minimum. Presets define 2-, 3-, 5-, and 7-day bonus tiers,
+  with optional break allowance after a tier has been earned.
 - `StreakProgress` records each streak's current earned tier and last update.
 - `ActivityEvent` records completed real-world activities.
 - `RewardEvent` records rewards, adjustments, and cash-out events.

@@ -127,6 +127,43 @@ removed prototype scope creep from rewards:
 Up next:
 - rebuild on the simulator and keep tuning the core daily loop
 
+## 2026-06-06 daily repetition presets
+added activity-scoped daily repetition configuration:
+- added high (3x), medium (5x), and none presets
+- added per-activity daily maximums of 1, 5, 12, or 20
+- greyed out maxed activities and verified reward-engine tests on iphone 13 mini
+Up next:
+- review the game-master activity editor on small screens
+
+## 2026-06-06 unlimited daily maximums
+refined activity daily maximum settings:
+- added a no-limit maximum option
+- clarified repetition preset labels with threshold and coin values
+Up next:
+- review the game-master activity editor on small screens
+
+## 2026-06-06 test-friendly activity defaults
+changed activity defaults for faster manual testing:
+- set seed and new-activity lockouts to 5 seconds
+- set all default repetition presets to high
+- removed default daily completion limits
+Up next:
+- reset seed data in the simulator before manual testing
+
+## 2026-06-06 game-master save and icons
+polished the game-master activity editor:
+- added emoji activity icons for hands, feet, violin, piano, and notes
+- pinned save configuration to the bottom with a visible saved confirmation
+Up next:
+- manually try icon picking and saving on the iphone 13 mini
+
+## 2026-06-06 sf-symbol icon cleanup
+kept game-master icon choices on sf symbols:
+- replaced emoji additions with hand, finger, piano, and multiple-note symbols
+- omitted violin and foot because they are not available as matching sf symbols
+Up next:
+- manually try icon picking and saving on the iphone 13 mini
+
 ## 2026-06-06 daily streak rewrite
 rewrote streaks around daily completion tiers:
 - removed interval streak configuration
@@ -142,3 +179,10 @@ made completion rewards feel distinct:
 - verified 10 reward-engine tests and simulator launch on iPhone 13 mini
 Up next:
 - tune exact sound choices on a physical device
+
+## 2026-06-06 main merge
+merged main into daily streak work:
+- kept within-day repetition bonuses and daily maximums separate from across-day streak levels
+- kept sf-symbol activity icons and pinned save controls
+Up next:
+- run reward-engine tests on iPhone 13 mini

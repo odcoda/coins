@@ -282,30 +282,30 @@ extension GameSnapshot {
                     title: "Warm-Up",
                     detail: "Two focused minutes to get started.",
                     baseReward: 1,
-                    lockoutSeconds: 300,
+                    lockoutSeconds: 5,
                     symbol: "leaf.fill",
                     repetitionBonusPreset: .high3x,
-                    dailyMaximum: 12
+                    dailyMaximum: 0
                 ),
                 ActivityDefinition(
                     id: "song-practice",
                     title: "Song Practice",
                     detail: "Run one assigned song from start to finish.",
                     baseReward: 2,
-                    lockoutSeconds: 600,
+                    lockoutSeconds: 5,
                     symbol: "music.note",
-                    repetitionBonusPreset: .medium5x,
-                    dailyMaximum: 20
+                    repetitionBonusPreset: .high3x,
+                    dailyMaximum: 0
                 ),
                 ActivityDefinition(
                     id: "sight-reading",
                     title: "Sight Reading",
                     detail: "Try something new without stopping.",
                     baseReward: 2,
-                    lockoutSeconds: 600,
+                    lockoutSeconds: 5,
                     symbol: "eye.fill",
-                    repetitionBonusPreset: .none,
-                    dailyMaximum: 5
+                    repetitionBonusPreset: .high3x,
+                    dailyMaximum: 0
                 )
             ],
             dailyCompletionBonuses: [],

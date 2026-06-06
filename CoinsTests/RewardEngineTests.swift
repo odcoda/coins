@@ -5,6 +5,7 @@ final class RewardEngineTests: XCTestCase {
     func testLockoutBlocksRapidTaps() {
         var snapshot = GameSnapshot.seed
         let now = Date(timeIntervalSince1970: 1_700_000_000)
+        snapshot.config.activities[0].lockoutSeconds = 300
 
         let first = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now)
         let second = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: now.addingTimeInterval(30))
@@ -38,6 +39,7 @@ final class RewardEngineTests: XCTestCase {
         let calendar = Calendar(identifier: .gregorian)
         let start = Date(timeIntervalSince1970: 1_700_000_000)
         snapshot.config.activities[1].lockoutSeconds = 0
+        snapshot.config.activities[1].repetitionBonusPreset = .medium5x
 
         var results: [CompletionResult] = []
         for offset in 0..<10 {

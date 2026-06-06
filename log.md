@@ -141,3 +141,11 @@ refined activity daily maximum settings:
 - clarified repetition preset labels with threshold and coin values
 Up next:
 - review the game-master activity editor on small screens
+
+## 2026-06-06 test-friendly activity defaults
+changed activity defaults for faster manual testing:
+- set seed and new-activity lockouts to 5 seconds
+- set all default repetition presets to high
+- removed default daily completion limits
+Up next:
+- reset seed data in the simulator before manual testing

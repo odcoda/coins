@@ -352,10 +352,10 @@ struct GameMasterView: View {
                 title: "New Activity",
                 detail: "Describe the real-world activity.",
                 baseReward: 1,
-                lockoutSeconds: 60,
+                lockoutSeconds: 5,
                 symbol: "checkmark.circle.fill",
-                repetitionBonusPreset: .none,
-                dailyMaximum: 5
+                repetitionBonusPreset: .high3x,
+                dailyMaximum: 0
             )
         )
     }

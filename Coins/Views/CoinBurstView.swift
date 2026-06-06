@@ -2,15 +2,17 @@ import SwiftUI
 
 struct CoinBurstView: View {
     let trigger: Int
-    let style: ThemeStyle
+    let particle: String
+    let color: Color
+    let radius: CGFloat
     @State private var animate = false
 
     var body: some View {
         ZStack {
             ForEach(0..<10, id: \.self) { index in
-                Text("¢")
+                Text(particle)
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
-                    .foregroundStyle(style.secondaryAccent)
+                    .foregroundStyle(color)
                     .offset(animate ? burstOffset(for: index) : .zero)
                     .scaleEffect(animate ? 0.8 : 0.1)
                     .opacity(animate ? 0 : 1)
@@ -28,7 +30,6 @@ struct CoinBurstView: View {
 
     private func burstOffset(for index: Int) -> CGSize {
         let angle = Double(index) / 10 * .pi * 2
-        return CGSize(width: cos(angle) * 70, height: sin(angle) * 70)
+        return CGSize(width: CGFloat(cos(angle)) * radius, height: CGFloat(sin(angle)) * radius)
     }
 }
-

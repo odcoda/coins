@@ -1,5 +1,7 @@
 import Charts
+import AudioToolbox
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @EnvironmentObject private var store: GameStore
@@ -131,7 +133,7 @@ struct ContentView: View {
             return
         }
 
-        rewardPresentation = RewardPresentation(coins: result.totalCoinsAwarded)
+        rewardPresentation = RewardPresentation(events: result.events)
         animateBalance(from: oldBalance, to: newBalance)
     }
 
@@ -210,7 +212,131 @@ private enum AppPage: String, CaseIterable, Identifiable {
 
 private struct RewardPresentation: Identifiable, Equatable {
     let id = UUID()
+    let items: [RewardCelebrationItem]
+
+    init(events: [RewardEvent]) {
+        items = events
+            .filter { $0.coins > 0 }
+            .map(RewardCelebrationItem.init(event:))
+    }
+
+    var totalCoins: Int {
+        items.reduce(0) { $0 + $1.coins }
+    }
+}
+
+private struct RewardCelebrationItem: Identifiable, Equatable {
+    let id: UUID
+    let title: String
+    let detail: String
     let coins: Int
+    let kind: RewardCelebrationKind
+
+    init(event: RewardEvent) {
+        id = event.id
+        title = event.title
+        detail = event.detail
+        coins = event.coins
+        kind = RewardCelebrationKind(rewardKind: event.kind)
+    }
+}
+
+private enum RewardCelebrationKind: Equatable {
+    case base
+    case repetition
+    case streak
+    case other
+
+    init(rewardKind: RewardKind) {
+        switch rewardKind {
+        case .structured:
+            self = .base
+        case .combo:
+            self = .repetition
+        case .dailyStreak:
+            self = .streak
+        case .adjustment, .cashOut:
+            self = .other
+        }
+    }
+
+    var headline: String {
+        switch self {
+        case .base:
+            return "Base Reward"
+        case .repetition:
+            return "Repetition Bonus"
+        case .streak:
+            return "Streak Bonus"
+        case .other:
+            return "Reward"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .base:
+            return "bitcoinsign.circle.fill"
+        case .repetition:
+            return "repeat.circle.fill"
+        case .streak:
+            return "flame.circle.fill"
+        case .other:
+            return "sparkles"
+        }
+    }
+
+    var particle: String {
+        switch self {
+        case .base:
+            return "¢"
+        case .repetition:
+            return "✦"
+        case .streak:
+            return "🔥"
+        case .other:
+            return "★"
+        }
+    }
+
+    var soundID: SystemSoundID {
+        switch self {
+        case .base:
+            return 1104
+        case .repetition:
+            return 1025
+        case .streak:
+            return 1057
+        case .other:
+            return 1016
+        }
+    }
+
+    var hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle {
+        switch self {
+        case .base:
+            return .light
+        case .repetition:
+            return .medium
+        case .streak:
+            return .heavy
+        case .other:
+            return .soft
+        }
+    }
+
+    func color(style: ThemeStyle) -> Color {
+        switch self {
+        case .base:
+            return style.accent
+        case .repetition:
+            return Color(red: 0.11, green: 0.55, blue: 0.90)
+        case .streak:
+            return Color(red: 0.95, green: 0.24, blue: 0.18)
+        case .other:
+            return style.secondaryAccent
+        }
+    }
 }
 
 private struct AppTopBar: View {
@@ -717,6 +843,7 @@ private struct RewardFlyOverlay: View {
 
     @State private var isFlying = false
     @State private var isFinished = false
+    @State private var revealedCount = 0
 
     var body: some View {
         GeometryReader { proxy in
@@ -724,25 +851,29 @@ private struct RewardFlyOverlay: View {
                 Color.white
                     .opacity(isFlying ? 0 : 0.92)
 
-                VStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(style.secondaryAccent.opacity(0.28))
-                            .frame(width: 82, height: 82)
-                        Image(systemName: "bitcoinsign.circle.fill")
-                            .font(.system(size: 54, weight: .heavy))
-                            .foregroundStyle(style.accent)
+                VStack(spacing: 14) {
+                    VStack(spacing: 6) {
+                        Text("Nice!")
+                            .font(.system(.title, design: .rounded, weight: .black))
+
+                        Text("You earned \(reward.totalCoins) \(reward.totalCoins == 1 ? "coin" : "coins")")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.secondary)
                     }
 
-                    Text("Nice!")
-                        .font(.system(.title, design: .rounded, weight: .black))
-
-                    Text("You earned \(reward.coins) \(reward.coins == 1 ? "coin" : "coins")")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.secondary)
+                    VStack(spacing: 10) {
+                        ForEach(Array(reward.items.enumerated()), id: \.element.id) { index, item in
+                            RewardCelebrationRow(
+                                item: item,
+                                style: style,
+                                isRevealed: index < revealedCount
+                            )
+                        }
+                    }
                 }
-                .padding(.horizontal, 34)
-                .padding(.vertical, 26)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 24)
+                .frame(maxWidth: min(proxy.size.width - 34, 390))
                 .background(Color.white, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 26, style: .continuous)
@@ -753,15 +884,34 @@ private struct RewardFlyOverlay: View {
                 .offset(y: isFlying ? -proxy.size.height * 0.5 - 12 : 0)
                 .opacity(isFinished ? 0 : 1)
 
-                CoinBurstView(trigger: reward.coins, style: style)
-                    .opacity(isFlying ? 0 : 1)
+                ForEach(Array(reward.items.enumerated()), id: \.element.id) { index, item in
+                    CoinBurstView(
+                        trigger: revealedCount > index ? reward.id.hashValue + index : 0,
+                        particle: item.kind.particle,
+                        color: item.kind.color(style: style),
+                        radius: item.kind == .streak ? 104 : 78
+                    )
+                    .opacity(!isFlying && revealedCount > index ? 1 : 0)
+                }
             }
         }
         .allowsHitTesting(false)
         .task(id: reward.id) {
             isFlying = false
             isFinished = false
-            try? await Task.sleep(nanoseconds: 260_000_000)
+            revealedCount = 0
+
+            for (index, item) in reward.items.enumerated() {
+                try? await Task.sleep(nanoseconds: index == 0 ? 120_000_000 : 420_000_000)
+                AudioServicesPlaySystemSound(item.kind.soundID)
+                UIImpactFeedbackGenerator(style: item.kind.hapticStyle).impactOccurred()
+                withAnimation(.spring(response: 0.46, dampingFraction: 0.68)) {
+                    revealedCount = index + 1
+                }
+            }
+
+            let holdTime = UInt64(900_000_000 + UInt64(reward.items.count) * 220_000_000)
+            try? await Task.sleep(nanoseconds: holdTime)
             withAnimation(.easeInOut(duration: 0.58)) {
                 isFlying = true
             }
@@ -772,6 +922,57 @@ private struct RewardFlyOverlay: View {
             try? await Task.sleep(nanoseconds: 180_000_000)
             onFinished()
         }
+    }
+}
+
+private struct RewardCelebrationRow: View {
+    let item: RewardCelebrationItem
+    let style: ThemeStyle
+    let isRevealed: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(item.kind.color(style: style).opacity(0.18))
+                    .frame(width: 52, height: 52)
+                Image(systemName: item.kind.symbol)
+                    .font(.system(size: 30, weight: .heavy))
+                    .foregroundStyle(item.kind.color(style: style))
+                    .symbolEffect(.bounce, value: isRevealed)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.kind.headline)
+                    .font(.caption.weight(.black))
+                    .foregroundStyle(item.kind.color(style: style))
+                    .textCase(.uppercase)
+                Text(item.title)
+                    .font(.headline.weight(.heavy))
+                    .lineLimit(1)
+                Text(item.detail)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            Text("+\(item.coins)")
+                .font(.system(.title3, design: .rounded, weight: .black))
+                .monospacedDigit()
+                .foregroundStyle(item.kind.color(style: style))
+                .contentTransition(.numericText())
+        }
+        .padding(12)
+        .background(item.kind.color(style: style).opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(item.kind.color(style: style).opacity(0.26), lineWidth: 1)
+        )
+        .scaleEffect(isRevealed ? 1 : 0.76)
+        .opacity(isRevealed ? 1 : 0)
+        .offset(y: isRevealed ? 0 : 16)
     }
 }
 

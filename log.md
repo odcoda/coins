@@ -134,3 +134,11 @@ rewrote streaks around daily completion tiers:
 - verified 10 reward-engine tests on iPhone 13 mini
 Up next:
 - try the game-master streak controls on device-sized screens
+
+## 2026-06-06 reward celebration tiers
+made completion rewards feel distinct:
+- split the completion overlay into base, repetition bonus, and streak bonus rows
+- added separate symbols, particles, sounds, haptics, and longer timing for stacked rewards
+- verified 10 reward-engine tests and simulator launch on iPhone 13 mini
+Up next:
+- tune exact sound choices on a physical device

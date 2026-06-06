@@ -210,3 +210,12 @@ streamlined history editing:
 - kept the in-sheet save confirmation and verified tests on iPhone 13 mini
 Up next:
 - try editing several days without leaving the calendar
+
+## 2026-06-06 game master sections
+split up Game Master controls:
+- moved rules configuration, password changes, and balance changes into separate screens/sheet
+- moved manual streak level controls into a Streak State section
+- removed the reset-to-seed-data button
+- verified 15 reward-engine tests on iPhone 13 mini
+Up next:
+- manually try the new Game Master flows on iPhone 13 mini

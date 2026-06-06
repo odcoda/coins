@@ -17,6 +17,10 @@ struct GameMasterView: View {
     @State private var isShowingSavedConfirmation = false
     @State private var saveConfirmationNonce = 0
     @State private var isShowingHistoryEditor = false
+    @State private var isShowingRulesEditor = false
+    @State private var isShowingPasswordEditor = false
+    @State private var isShowingBalanceEditor = false
+    @State private var pendingBalanceAdjustment = 0
 
     private let rewardOptions = Array(0...50)
     private let lockoutOptions = Array(stride(from: 5, through: 60, by: 5)) + Array(stride(from: 120, through: 600, by: 60))
@@ -112,6 +116,25 @@ struct GameMasterView: View {
             HistoryEditorView()
                 .environmentObject(store)
         }
+        .fullScreenCover(isPresented: $isShowingRulesEditor) {
+            rulesEditor
+        }
+        .fullScreenCover(isPresented: $isShowingPasswordEditor) {
+            PasswordEditorView()
+                .environmentObject(store)
+        }
+        .sheet(isPresented: $isShowingBalanceEditor) {
+            BalanceEditorSheet(
+                currentBalance: store.snapshot.state.coinBalance,
+                adjustment: $pendingBalanceAdjustment,
+                reason: $adjustmentReason
+            ) {
+                store.adjustCoins(by: pendingBalanceAdjustment, reason: adjustmentReason)
+                pendingBalanceAdjustment = 0
+                isShowingBalanceEditor = false
+            }
+            .presentationDetents([.medium])
+        }
     }
 
     private var lockedView: some View {
@@ -151,6 +174,79 @@ struct GameMasterView: View {
                 }
             }
 
+            Section("Streak State") {
+                if draftConfig.streaks.isEmpty {
+                    Text("No streaks configured.")
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(draftConfig.streaks) { streak in
+                    Picker(streak.title.isEmpty ? "Streak level" : streak.title, selection: streakLevelBinding(for: streak.id, preset: streak.bonusPreset)) {
+                        Text("None").tag(0)
+                        ForEach(streak.bonusPreset.levels, id: \.days) { level in
+                            Text("\(level.days) days").tag(level.days)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+            }
+
+            Section("Configuration") {
+                Button {
+                    isShowingRulesEditor = true
+                } label: {
+                    Label("Configure Rules", systemImage: "slider.horizontal.3")
+                }
+
+                Button {
+                    isShowingPasswordEditor = true
+                } label: {
+                    Label("Change Password", systemImage: "key.fill")
+                }
+            }
+
+            Section("Balance") {
+                Button {
+                    pendingBalanceAdjustment = 0
+                    isShowingBalanceEditor = true
+                } label: {
+                    Label("Change Balance", systemImage: "plus.forwardslash.minus")
+                }
+            }
+
+            Section("Sync") {
+                Button("Export JSON Snapshot") {
+                    exportDocument = store.exportDocument()
+                    isExporting = true
+                }
+                Button("Import JSON Snapshot") {
+                    isImporting = true
+                }
+            }
+        }
+    }
+
+    private var rulesEditor: some View {
+        NavigationStack {
+            Form {
+                rulesSections
+            }
+            .navigationTitle("Configure Rules")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        isShowingRulesEditor = false
+                    }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                saveBar
+            }
+        }
+    }
+
+    private var rulesSections: some View {
+        Group {
             Section("Basics") {
                 Toggle("Read reward text aloud", isOn: $draftConfig.speechEnabled)
                 Picker("Theme", selection: $draftConfig.theme) {
@@ -291,14 +387,6 @@ struct GameMasterView: View {
                         }
                         .pickerStyle(.menu)
 
-                        Picker("Manual level", selection: streakLevelBinding(for: streak.id, preset: streak.bonusPreset)) {
-                            Text("None").tag(0)
-                            ForEach(streak.bonusPreset.levels, id: \.days) { level in
-                                Text("\(level.days) days").tag(level.days)
-                            }
-                        }
-                        .pickerStyle(.menu)
-
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Activities that count")
                                 .font(.subheadline.weight(.semibold))
@@ -319,40 +407,6 @@ struct GameMasterView: View {
                     Label("Add Streak", systemImage: "plus.circle.fill")
                 }
             }
-
-            Section("Balance Controls") {
-                Button("+1 Coin") {
-                    store.adjustCoins(by: 1, reason: adjustmentReason)
-                }
-                Button("-1 Coin") {
-                    store.adjustCoins(by: -1, reason: adjustmentReason)
-                }
-                Button("-5 Coins") {
-                    store.adjustCoins(by: -5, reason: adjustmentReason)
-                }
-                TextField("Adjustment reason", text: $adjustmentReason)
-            }
-
-            Section("Sync") {
-                Button("Export JSON Snapshot") {
-                    exportDocument = store.exportDocument()
-                    isExporting = true
-                }
-                Button("Import JSON Snapshot") {
-                    isImporting = true
-                }
-                Button("Reset to Seed Data", role: .destructive) {
-                    store.resetToSeedData()
-                    draftConfig = store.snapshot.config
-                }
-            }
-
-            Section("Password") {
-                SecureField("Game-master password", text: $draftConfig.masterPassword)
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            saveBar
         }
     }
 
@@ -574,6 +628,150 @@ private struct IconOption: Identifiable {
     let symbol: String
 
     var id: String { symbol }
+}
+
+private struct PasswordEditorView: View {
+    @EnvironmentObject private var store: GameStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var password = ""
+    @State private var confirmation = ""
+    @State private var errorMessage: String?
+
+    private var canSave: Bool {
+        !password.isEmpty && password == confirmation
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("New Password") {
+                    SecureField("Password", text: $password)
+                    SecureField("Enter password again", text: $confirmation)
+
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                Section {
+                    Button {
+                        savePassword()
+                    } label: {
+                        Label("Change Password", systemImage: "key.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!canSave)
+                }
+            }
+            .navigationTitle("Change Password")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func savePassword() {
+        guard !password.isEmpty else {
+            errorMessage = "Enter a password."
+            return
+        }
+        guard password == confirmation else {
+            errorMessage = "Passwords do not match."
+            return
+        }
+
+        var config = store.snapshot.config
+        config.masterPassword = password
+        store.apply(config: config)
+        dismiss()
+    }
+}
+
+private struct BalanceEditorSheet: View {
+    let currentBalance: Int
+    @Binding var adjustment: Int
+    @Binding var reason: String
+    let onSave: () -> Void
+
+    private var adjustedBalance: Int {
+        currentBalance + adjustment
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 22) {
+                TextField("Adjustment reason", text: $reason)
+                    .textFieldStyle(.roundedBorder)
+
+                HStack(spacing: 12) {
+                    adjustmentButton("-10", delta: -10)
+                    adjustmentButton("-1", delta: -1)
+
+                    VStack(spacing: 6) {
+                        Text("\(adjustedBalance)")
+                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                        Text(diffText)
+                            .font(.headline)
+                            .foregroundStyle(diffColor)
+                            .monospacedDigit()
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    adjustmentButton("+1", delta: 1)
+                    adjustmentButton("+10", delta: 10)
+                }
+
+                Button {
+                    onSave()
+                } label: {
+                    Label("Save Changes", systemImage: "checkmark.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .fontWeight(.bold)
+                .buttonStyle(.borderedProminent)
+                .disabled(adjustment == 0)
+            }
+            .padding(20)
+            .navigationTitle("Change Balance")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private var diffText: String {
+        if adjustment > 0 {
+            return "+\(adjustment)"
+        }
+        return "\(adjustment)"
+    }
+
+    private var diffColor: Color {
+        if adjustment > 0 {
+            return .green
+        }
+        if adjustment < 0 {
+            return .red
+        }
+        return .secondary
+    }
+
+    private func adjustmentButton(_ title: String, delta: Int) -> some View {
+        Button {
+            adjustment += delta
+        } label: {
+            Text(title)
+                .font(.headline.weight(.bold))
+                .frame(width: 52, height: 52)
+        }
+        .buttonStyle(.bordered)
+    }
 }
 
 private struct IconPickerSheet: View {

@@ -197,12 +197,6 @@ struct GameMasterView: View {
                 } label: {
                     Label("Configure Rules", systemImage: "slider.horizontal.3")
                 }
-
-                Button {
-                    isShowingPasswordEditor = true
-                } label: {
-                    Label("Change Password", systemImage: "key.fill")
-                }
             }
 
             Section("Balance") {
@@ -221,6 +215,14 @@ struct GameMasterView: View {
                 }
                 Button("Import JSON Snapshot") {
                     isImporting = true
+                }
+            }
+
+            Section("Password") {
+                Button {
+                    isShowingPasswordEditor = true
+                } label: {
+                    Label("Change Password", systemImage: "key.fill")
                 }
             }
         }

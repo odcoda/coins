@@ -73,9 +73,9 @@ enum DailyRepetitionBonusPreset: String, Codable, CaseIterable, Identifiable, Ha
     var displayName: String {
         switch self {
         case .high3x:
-            return "High (3x)"
+            return "High (3/6/9/12x -> 1/2/3/5c)"
         case .medium5x:
-            return "Medium (5x)"
+            return "Medium (5/10/15/20x -> 1/2/3/5c)"
         case .none:
             return "None"
         }

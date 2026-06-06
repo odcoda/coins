@@ -84,6 +84,31 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertEqual(snapshot.state.activityEvents.count, 2)
     }
 
+    func testDailyMaximumZeroAllowsUnlimitedCompletions() {
+        var snapshot = GameSnapshot.seed
+        let calendar = Calendar(identifier: .gregorian)
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        snapshot.config.activities[0].lockoutSeconds = 0
+        snapshot.config.activities[0].dailyMaximum = 0
+
+        var results: [CompletionResult] = []
+        for offset in 0..<13 {
+            results.append(
+                RewardEngine.complete(
+                    activityID: "warmup",
+                    snapshot: &snapshot,
+                    now: start.addingTimeInterval(Double(offset)),
+                    calendar: calendar
+                )
+            )
+        }
+
+        XCTAssertFalse(results.contains(where: \.isDenied))
+        XCTAssertEqual(snapshot.state.activityEvents.count, 13)
+        XCTAssertTrue(results[11].events.contains(where: { $0.kind == .combo && $0.coins == 5 }))
+        XCTAssertFalse(results[12].events.contains(where: { $0.kind == .combo }))
+    }
+
     func testWeeklyStreakExtraRewardGrowsAfterMinimum() {
         var snapshot = GameSnapshot.seed
         snapshot.config.streaks = [

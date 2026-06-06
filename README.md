@@ -59,6 +59,7 @@ The engine is intentionally deterministic when tests pass explicit dates.
   bonus preset, and daily maximum.
 - Daily repetition bonuses are activity-scoped presets: high (3x), medium (5x),
   or none.
+- Daily maximums can be 1, 5, 12, 20, or no limit.
 - `StreakDefinition` triggers once per configured period for its chosen
   activities. Periods can be daily, every 2-5 days, weekly, every 2-4 weeks,
   or monthly, with optional extra reward growth after the minimum streak length.

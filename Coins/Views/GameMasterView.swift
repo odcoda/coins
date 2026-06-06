@@ -17,7 +17,7 @@ struct GameMasterView: View {
 
     private let rewardOptions = Array(0...50)
     private let lockoutOptions = Array(stride(from: 5, through: 60, by: 5)) + Array(stride(from: 120, through: 600, by: 60))
-    private let dailyMaximumOptions = [1, 5, 12, 20]
+    private let dailyMaximumOptions = [0, 1, 5, 12, 20]
     private let iconOptions = [
         IconOption(title: "Leaf", symbol: "leaf.fill"),
         IconOption(title: "Music", symbol: "music.note"),
@@ -204,7 +204,7 @@ struct GameMasterView: View {
 
                         Picker("Daily Maximum", selection: $activity.dailyMaximum) {
                             ForEach(dailyMaximumOptions(for: activity.dailyMaximum), id: \.self) { maximum in
-                                Text("\(maximum) per day").tag(maximum)
+                                Text(dailyMaximumLabel(maximum)).tag(maximum)
                             }
                         }
                         .pickerStyle(.menu)
@@ -445,9 +445,16 @@ struct GameMasterView: View {
     }
 
     private func nearestDailyMaximum(to value: Int) -> Int {
-        dailyMaximumOptions.min { lhs, rhs in
+        guard value > 0 else {
+            return 0
+        }
+        return dailyMaximumOptions.min { lhs, rhs in
             abs(lhs - value) < abs(rhs - value)
         } ?? 5
+    }
+
+    private func dailyMaximumLabel(_ maximum: Int) -> String {
+        return maximum == 0 ? "No limit" : "\(maximum) per day"
     }
 
     private func iconButton(symbol: String, accessibilityLabel: String, action: @escaping () -> Void) -> some View {

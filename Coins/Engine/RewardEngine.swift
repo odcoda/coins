@@ -13,7 +13,7 @@ enum RewardEngine {
         }
 
         let stats = snapshot.state.stats(for: activityID, at: now, calendar: calendar)
-        if stats.completionsToday >= max(activity.dailyMaximum, 1) {
+        if activity.dailyMaximum > 0 && stats.completionsToday >= activity.dailyMaximum {
             let denial = "Daily maximum reached for \(activity.title)."
             return CompletionResult(events: [], deniedReason: denial, speechText: denial)
         }

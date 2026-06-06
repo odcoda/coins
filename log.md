@@ -134,3 +134,10 @@ added activity-scoped daily repetition configuration:
 - greyed out maxed activities and verified reward-engine tests on iphone 13 mini
 Up next:
 - review the game-master activity editor on small screens
+
+## 2026-06-06 unlimited daily maximums
+refined activity daily maximum settings:
+- added a no-limit maximum option
+- clarified repetition preset labels with threshold and coin values
+Up next:
+- review the game-master activity editor on small screens

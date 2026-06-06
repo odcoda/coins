@@ -379,7 +379,7 @@ private struct ActivitiesPage: View {
     private func activityRow(for activity: ActivityDefinition) -> some View {
         let remainingLockout = store.remainingLockout(for: activity, at: currentDate)
         let stats = store.stats(for: activity, at: currentDate)
-        let isDailyMaximumReached = stats.completionsToday >= max(activity.dailyMaximum, 1)
+        let isDailyMaximumReached = activity.dailyMaximum > 0 && stats.completionsToday >= activity.dailyMaximum
 
         return Button {
             onComplete(activity)
@@ -811,7 +811,7 @@ private struct ActivityCard: View {
                     .foregroundStyle(.secondary)
 
                 HStack {
-                    Text("Today \(stats.completionsToday)/\(max(activity.dailyMaximum, 1))")
+                    Text(todayText)
                     Spacer()
                     if isDailyMaximumReached {
                         Text("Done for today")
@@ -830,5 +830,12 @@ private struct ActivityCard: View {
         .padding(18)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .opacity(isDailyMaximumReached ? 0.48 : 1)
+    }
+
+    private var todayText: String {
+        if activity.dailyMaximum > 0 {
+            return "Today \(stats.completionsToday)/\(activity.dailyMaximum)"
+        }
+        return "Today \(stats.completionsToday)x"
     }
 }

@@ -17,6 +17,7 @@ struct GameMasterView: View {
 
     private let rewardOptions = Array(0...50)
     private let lockoutOptions = Array(stride(from: 5, through: 60, by: 5)) + Array(stride(from: 120, through: 600, by: 60))
+    private let dailyMaximumOptions = [1, 5, 12, 20]
     private let iconOptions = [
         IconOption(title: "Leaf", symbol: "leaf.fill"),
         IconOption(title: "Music", symbol: "music.note"),
@@ -193,6 +194,20 @@ struct GameMasterView: View {
                             }
                         }
                         .pickerStyle(.menu)
+
+                        Picker("Repetition Bonus", selection: $activity.repetitionBonusPreset) {
+                            ForEach(DailyRepetitionBonusPreset.allCases) { preset in
+                                Text(preset.displayName).tag(preset)
+                            }
+                        }
+                        .pickerStyle(.menu)
+
+                        Picker("Daily Maximum", selection: $activity.dailyMaximum) {
+                            ForEach(dailyMaximumOptions(for: activity.dailyMaximum), id: \.self) { maximum in
+                                Text("\(maximum) per day").tag(maximum)
+                            }
+                        }
+                        .pickerStyle(.menu)
                     }
                     .padding(.vertical, 6)
                 }
@@ -338,7 +353,9 @@ struct GameMasterView: View {
                 detail: "Describe the real-world activity.",
                 baseReward: 1,
                 lockoutSeconds: 60,
-                symbol: "checkmark.circle.fill"
+                symbol: "checkmark.circle.fill",
+                repetitionBonusPreset: .none,
+                dailyMaximum: 5
             )
         )
     }
@@ -348,9 +365,6 @@ struct GameMasterView: View {
         draftConfig.activities.removeAll { $0.id == id }
         for index in draftConfig.streaks.indices {
             draftConfig.streaks[index].activityIDs.removeAll { $0 == id }
-        }
-        for index in draftConfig.dailyCompletionBonuses.indices {
-            draftConfig.dailyCompletionBonuses[index].activityIDs.removeAll { $0 == id }
         }
     }
 
@@ -402,15 +416,12 @@ struct GameMasterView: View {
                 config.streaks[index].symbol = "flame.fill"
             }
         }
-        for index in config.dailyCompletionBonuses.indices {
-            config.dailyCompletionBonuses[index].threshold = max(config.dailyCompletionBonuses[index].threshold, 1)
-            config.dailyCompletionBonuses[index].rewardCoins = min(max(config.dailyCompletionBonuses[index].rewardCoins, 0), 50)
-            config.dailyCompletionBonuses[index].activityIDs = config.dailyCompletionBonuses[index].activityIDs.filter {
-                validActivityIDs.contains($0)
+        config.dailyCompletionBonuses = []
+        for index in config.activities.indices {
+            if config.activities[index].symbol.isEmpty {
+                config.activities[index].symbol = "checkmark.circle.fill"
             }
-        }
-        for index in config.activities.indices where config.activities[index].symbol.isEmpty {
-            config.activities[index].symbol = "checkmark.circle.fill"
+            config.activities[index].dailyMaximum = nearestDailyMaximum(to: config.activities[index].dailyMaximum)
         }
         return config
     }
@@ -427,6 +438,16 @@ struct GameMasterView: View {
             return "1 minute"
         }
         return "\(seconds / 60) minutes"
+    }
+
+    private func dailyMaximumOptions(for currentValue: Int) -> [Int] {
+        Array(Set(dailyMaximumOptions + [currentValue])).sorted()
+    }
+
+    private func nearestDailyMaximum(to value: Int) -> Int {
+        dailyMaximumOptions.min { lhs, rhs in
+            abs(lhs - value) < abs(rhs - value)
+        } ?? 5
     }
 
     private func iconButton(symbol: String, accessibilityLabel: String, action: @escaping () -> Void) -> some View {

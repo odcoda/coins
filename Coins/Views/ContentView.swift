@@ -378,19 +378,22 @@ private struct ActivitiesPage: View {
 
     private func activityRow(for activity: ActivityDefinition) -> some View {
         let remainingLockout = store.remainingLockout(for: activity, at: currentDate)
+        let stats = store.stats(for: activity, at: currentDate)
+        let isDailyMaximumReached = stats.completionsToday >= max(activity.dailyMaximum, 1)
 
         return Button {
             onComplete(activity)
         } label: {
             ActivityCard(
                 activity: activity,
-                stats: store.stats(for: activity, at: currentDate),
+                stats: stats,
                 remainingLockout: remainingLockout,
+                isDailyMaximumReached: isDailyMaximumReached,
                 style: style
             )
         }
         .buttonStyle(.plain)
-        .disabled(remainingLockout > 0)
+        .disabled(remainingLockout > 0 || isDailyMaximumReached)
     }
 }
 
@@ -779,6 +782,7 @@ private struct ActivityCard: View {
     let activity: ActivityDefinition
     let stats: ActivityStats
     let remainingLockout: Int
+    let isDailyMaximumReached: Bool
     let style: ThemeStyle
 
     var body: some View {
@@ -807,9 +811,12 @@ private struct ActivityCard: View {
                     .foregroundStyle(.secondary)
 
                 HStack {
-                    Text("Today \(stats.completionsToday)x")
+                    Text("Today \(stats.completionsToday)/\(max(activity.dailyMaximum, 1))")
                     Spacer()
-                    if remainingLockout > 0 {
+                    if isDailyMaximumReached {
+                        Text("Done for today")
+                            .foregroundStyle(.secondary)
+                    } else if remainingLockout > 0 {
                         Text("Ready in \(remainingLockout)s")
                             .foregroundStyle(.red)
                     } else {
@@ -822,5 +829,6 @@ private struct ActivityCard: View {
         }
         .padding(18)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .opacity(isDailyMaximumReached ? 0.48 : 1)
     }
 }

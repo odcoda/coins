@@ -12,7 +12,13 @@ enum RewardEngine {
             return CompletionResult(events: [], deniedReason: denial, speechText: denial)
         }
 
-        if let lastCompletedAt = snapshot.state.stats(for: activityID, at: now, calendar: calendar).lastCompletedAt {
+        let stats = snapshot.state.stats(for: activityID, at: now, calendar: calendar)
+        if stats.completionsToday >= max(activity.dailyMaximum, 1) {
+            let denial = "Daily maximum reached for \(activity.title)."
+            return CompletionResult(events: [], deniedReason: denial, speechText: denial)
+        }
+
+        if let lastCompletedAt = stats.lastCompletedAt {
             let elapsed = now.timeIntervalSince(lastCompletedAt)
             if elapsed < Double(activity.lockoutSeconds) {
                 let remaining = Int(ceil(Double(activity.lockoutSeconds) - elapsed))
@@ -43,24 +49,18 @@ enum RewardEngine {
             )
         )
 
-        for bonus in snapshot.config.dailyCompletionBonuses where bonus.activityIDs.contains(activityID) {
-            let completionCount = snapshot.state.dailyCompletionCount(
-                at: now,
-                activityIDs: Set(bonus.activityIDs),
-                calendar: calendar
-            )
-            guard completionCount == max(bonus.threshold, 1) else {
-                continue
-            }
+        let completionCount = snapshot.state.stats(for: activityID, at: now, calendar: calendar).completionsToday
+        if let bonusCoins = activity.repetitionBonusPreset.bonusCoins(at: completionCount) {
+            let plural = bonusCoins == 1 ? "coin" : "coins"
 
             events.append(
                 recordReward(
-                    title: bonus.title,
-                    detail: bonus.detail,
-                    coins: bonus.rewardCoins,
+                    title: "\(activity.title) Repetition Bonus",
+                    detail: "\(activity.repetitionBonusPreset.detail(for: completionCount)) Bonus: \(bonusCoins) \(plural).",
+                    coins: bonusCoins,
                     kind: .combo,
                     activityEventID: activityEvent.id,
-                    definitionID: bonus.id,
+                    definitionID: "\(activity.id)-\(activity.repetitionBonusPreset.rawValue)-\(completionCount)",
                     snapshot: &snapshot,
                     now: now
                 )

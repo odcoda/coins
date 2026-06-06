@@ -126,3 +126,11 @@ removed prototype scope creep from rewards:
 - kept activities, daily bonuses, streaks, cash-out, and reward history
 Up next:
 - rebuild on the simulator and keep tuning the core daily loop
+
+## 2026-06-06 daily repetition presets
+added activity-scoped daily repetition configuration:
+- added high (3x), medium (5x), and none presets
+- added per-activity daily maximums of 1, 5, 12, or 20
+- greyed out maxed activities and verified reward-engine tests on iphone 13 mini
+Up next:
+- review the game-master activity editor on small screens

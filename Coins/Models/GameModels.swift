@@ -13,6 +13,92 @@ struct ActivityDefinition: Identifiable, Codable, Hashable {
     var baseReward: Int
     var lockoutSeconds: Int
     var symbol: String
+    var repetitionBonusPreset: DailyRepetitionBonusPreset
+    var dailyMaximum: Int
+
+    init(
+        id: String,
+        title: String,
+        detail: String,
+        baseReward: Int,
+        lockoutSeconds: Int,
+        symbol: String,
+        repetitionBonusPreset: DailyRepetitionBonusPreset = .none,
+        dailyMaximum: Int = 20
+    ) {
+        self.id = id
+        self.title = title
+        self.detail = detail
+        self.baseReward = baseReward
+        self.lockoutSeconds = lockoutSeconds
+        self.symbol = symbol
+        self.repetitionBonusPreset = repetitionBonusPreset
+        self.dailyMaximum = dailyMaximum
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case detail
+        case baseReward
+        case lockoutSeconds
+        case symbol
+        case repetitionBonusPreset
+        case dailyMaximum
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        detail = try container.decode(String.self, forKey: .detail)
+        baseReward = try container.decode(Int.self, forKey: .baseReward)
+        lockoutSeconds = try container.decode(Int.self, forKey: .lockoutSeconds)
+        symbol = try container.decode(String.self, forKey: .symbol)
+        repetitionBonusPreset = try container.decodeIfPresent(
+            DailyRepetitionBonusPreset.self,
+            forKey: .repetitionBonusPreset
+        ) ?? .none
+        dailyMaximum = try container.decodeIfPresent(Int.self, forKey: .dailyMaximum) ?? 20
+    }
+}
+
+enum DailyRepetitionBonusPreset: String, Codable, CaseIterable, Identifiable, Hashable {
+    case high3x
+    case medium5x
+    case none
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .high3x:
+            return "High (3x)"
+        case .medium5x:
+            return "Medium (5x)"
+        case .none:
+            return "None"
+        }
+    }
+
+    var thresholds: [(completionCount: Int, coins: Int)] {
+        switch self {
+        case .high3x:
+            return [(3, 1), (6, 2), (9, 3), (12, 5)]
+        case .medium5x:
+            return [(5, 1), (10, 2), (15, 3), (20, 5)]
+        case .none:
+            return []
+        }
+    }
+
+    func bonusCoins(at completionCount: Int) -> Int? {
+        thresholds.first { $0.completionCount == completionCount }?.coins
+    }
+
+    func detail(for completionCount: Int) -> String {
+        "Completed this activity \(completionCount)x today."
+    }
 }
 
 struct DailyDefinition: Identifiable, Codable, Hashable {
@@ -197,7 +283,9 @@ extension GameSnapshot {
                     detail: "Two focused minutes to get started.",
                     baseReward: 1,
                     lockoutSeconds: 300,
-                    symbol: "leaf.fill"
+                    symbol: "leaf.fill",
+                    repetitionBonusPreset: .high3x,
+                    dailyMaximum: 12
                 ),
                 ActivityDefinition(
                     id: "song-practice",
@@ -205,7 +293,9 @@ extension GameSnapshot {
                     detail: "Run one assigned song from start to finish.",
                     baseReward: 2,
                     lockoutSeconds: 600,
-                    symbol: "music.note"
+                    symbol: "music.note",
+                    repetitionBonusPreset: .medium5x,
+                    dailyMaximum: 20
                 ),
                 ActivityDefinition(
                     id: "sight-reading",
@@ -213,27 +303,12 @@ extension GameSnapshot {
                     detail: "Try something new without stopping.",
                     baseReward: 2,
                     lockoutSeconds: 600,
-                    symbol: "eye.fill"
+                    symbol: "eye.fill",
+                    repetitionBonusPreset: .none,
+                    dailyMaximum: 5
                 )
             ],
-            dailyCompletionBonuses: [
-                DailyDefinition(
-                    id: "combo-2",
-                    title: "Quick Double",
-                    detail: "You hit 2 total completions today.",
-                    activityIDs: ["warmup", "song-practice", "sight-reading"],
-                    threshold: 2,
-                    rewardCoins: 1
-                ),
-                DailyDefinition(
-                    id: "combo-4",
-                    title: "Practice Wave",
-                    detail: "You hit 4 total completions today.",
-                    activityIDs: ["warmup", "song-practice", "sight-reading"],
-                    threshold: 4,
-                    rewardCoins: 3
-                )
-            ],
+            dailyCompletionBonuses: [],
             streaks: [
                 StreakDefinition(
                     id: "streak-3",

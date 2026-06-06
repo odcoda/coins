@@ -15,7 +15,7 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertEqual(snapshot.state.rewardEvents, first.events)
     }
 
-    func testComboAndConfiguredDailyStreakRewardsStack() {
+    func testRepetitionPresetAndConfiguredDailyStreakRewardsStack() {
         var snapshot = GameSnapshot.seed
         let calendar = Calendar(identifier: .gregorian)
         let dayOne = Date(timeIntervalSince1970: 1_700_000_000)
@@ -24,12 +24,64 @@ final class RewardEngineTests: XCTestCase {
 
         _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne, calendar: calendar)
         _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne.addingTimeInterval(301), calendar: calendar)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayOne.addingTimeInterval(602), calendar: calendar)
         _ = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: dayTwo, calendar: calendar)
         let result = RewardEngine.complete(activityID: "sight-reading", snapshot: &snapshot, now: dayThree, calendar: calendar)
 
         XCTAssertEqual(snapshot.state.activeDailyStreak(at: dayThree, calendar: calendar), 3)
         XCTAssertTrue(result.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 4 }))
         XCTAssertTrue(snapshot.state.rewardEvents.contains(where: { $0.kind == .combo }))
+    }
+
+    func testMediumRepetitionPresetAwardsAtConfiguredThresholds() {
+        var snapshot = GameSnapshot.seed
+        let calendar = Calendar(identifier: .gregorian)
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        snapshot.config.activities[1].lockoutSeconds = 0
+
+        var results: [CompletionResult] = []
+        for offset in 0..<10 {
+            results.append(
+                RewardEngine.complete(
+                    activityID: "song-practice",
+                    snapshot: &snapshot,
+                    now: start.addingTimeInterval(Double(offset)),
+                    calendar: calendar
+                )
+            )
+        }
+
+        XCTAssertTrue(results[4].events.contains(where: { $0.kind == .combo && $0.coins == 1 }))
+        XCTAssertTrue(results[9].events.contains(where: { $0.kind == .combo && $0.coins == 2 }))
+        XCTAssertFalse(results[0].events.contains(where: { $0.kind == .combo }))
+    }
+
+    func testDailyMaximumBlocksAdditionalCompletionsUntilNextDay() {
+        var snapshot = GameSnapshot.seed
+        let calendar = Calendar(identifier: .gregorian)
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        snapshot.config.activities[0].lockoutSeconds = 0
+        snapshot.config.activities[0].dailyMaximum = 1
+
+        let first = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: start, calendar: calendar)
+        let second = RewardEngine.complete(
+            activityID: "warmup",
+            snapshot: &snapshot,
+            now: start.addingTimeInterval(60),
+            calendar: calendar
+        )
+        let nextDay = RewardEngine.complete(
+            activityID: "warmup",
+            snapshot: &snapshot,
+            now: start.addingTimeInterval(86_400),
+            calendar: calendar
+        )
+
+        XCTAssertFalse(first.isDenied)
+        XCTAssertTrue(second.isDenied)
+        XCTAssertEqual(second.deniedReason, "Daily maximum reached for Warm-Up.")
+        XCTAssertFalse(nextDay.isDenied)
+        XCTAssertEqual(snapshot.state.activityEvents.count, 2)
     }
 
     func testWeeklyStreakExtraRewardGrowsAfterMinimum() {
@@ -134,10 +186,10 @@ final class RewardEngineTests: XCTestCase {
         let secondCashOut = RewardEngine.cashOut(snapshot: &snapshot, now: start.addingTimeInterval(900))
 
         XCTAssertNotNil(cashOut)
-        XCTAssertEqual(snapshot.state.coinBalance, 4)
+        XCTAssertEqual(snapshot.state.coinBalance, 3)
         XCTAssertNil(secondCashOut)
-        XCTAssertEqual(snapshot.state.cashedOutCoinsWatermark, 4)
-        XCTAssertEqual(snapshot.state.cashedOutDollars, 0.2, accuracy: 0.0001)
+        XCTAssertEqual(snapshot.state.cashedOutCoinsWatermark, 3)
+        XCTAssertEqual(snapshot.state.cashedOutDollars, 0.15, accuracy: 0.0001)
     }
 
     func testCompletionRecordsActivityHistoryAndRewardProvenance() {

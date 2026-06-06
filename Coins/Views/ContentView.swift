@@ -791,7 +791,7 @@ private struct ActivityCard: View {
                 Circle()
                     .fill(style.secondaryAccent.opacity(0.24))
                     .frame(width: 54, height: 54)
-                Image(systemName: activity.symbol)
+                ActivityIconGlyph(symbol: activity.symbol)
                     .font(.title3.weight(.bold))
                     .foregroundStyle(style.accent)
             }
@@ -837,5 +837,17 @@ private struct ActivityCard: View {
             return "Today \(stats.completionsToday)/\(activity.dailyMaximum)"
         }
         return "Today \(stats.completionsToday)x"
+    }
+}
+
+private struct ActivityIconGlyph: View {
+    let symbol: String
+
+    var body: some View {
+        if symbol.unicodeScalars.allSatisfy(\.isASCII) {
+            Image(systemName: symbol)
+        } else {
+            Text(symbol)
+        }
     }
 }

@@ -149,3 +149,10 @@ changed activity defaults for faster manual testing:
 - removed default daily completion limits
 Up next:
 - reset seed data in the simulator before manual testing
+
+## 2026-06-06 game-master save and icons
+polished the game-master activity editor:
+- added emoji activity icons for hands, feet, violin, piano, and notes
+- pinned save configuration to the bottom with a visible saved confirmation
+Up next:
+- manually try icon picking and saving on the iphone 13 mini

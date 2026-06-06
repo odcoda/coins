@@ -14,6 +14,8 @@ struct GameMasterView: View {
     @State private var isImporting = false
     @State private var importError: String?
     @State private var iconSelection: IconSelection?
+    @State private var isShowingSavedConfirmation = false
+    @State private var saveConfirmationNonce = 0
 
     private let rewardOptions = Array(0...50)
     private let lockoutOptions = Array(stride(from: 5, through: 60, by: 5)) + Array(stride(from: 120, through: 600, by: 60))
@@ -30,7 +32,13 @@ struct GameMasterView: View {
         IconOption(title: "Book", symbol: "book.fill"),
         IconOption(title: "Pencil", symbol: "pencil"),
         IconOption(title: "Trophy", symbol: "trophy.fill"),
-        IconOption(title: "Target", symbol: "target")
+        IconOption(title: "Target", symbol: "target"),
+        IconOption(title: "Hand", symbol: "✋"),
+        IconOption(title: "Finger", symbol: "☝️"),
+        IconOption(title: "Foot", symbol: "🦶"),
+        IconOption(title: "Violin", symbol: "🎻"),
+        IconOption(title: "Piano", symbol: "🎹"),
+        IconOption(title: "Notes", symbol: "🎶")
     ]
 
     var body: some View {
@@ -335,14 +343,40 @@ struct GameMasterView: View {
             Section("Password") {
                 SecureField("Game-master password", text: $draftConfig.masterPassword)
             }
-
-            Section {
-                Button("Save Configuration") {
-                    store.apply(config: sanitizedConfig())
-                }
-                .fontWeight(.bold)
-            }
         }
+        .safeAreaInset(edge: .bottom) {
+            saveBar
+        }
+    }
+
+    private var saveBar: some View {
+        VStack(spacing: 8) {
+            if isShowingSavedConfirmation {
+                Label("Configuration saved", systemImage: "checkmark.circle.fill")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.green)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+
+            Button {
+                saveConfiguration()
+            } label: {
+                Label(
+                    isShowingSavedConfirmation ? "Saved" : "Save Configuration",
+                    systemImage: isShowingSavedConfirmation ? "checkmark.circle.fill" : "square.and.arrow.down.fill"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .fontWeight(.bold)
+            .buttonStyle(.borderedProminent)
+            .tint(isShowingSavedConfirmation ? .green : .orange)
+            .scaleEffect(isShowingSavedConfirmation ? 1.03 : 1)
+            .animation(.spring(response: 0.24, dampingFraction: 0.62), value: isShowingSavedConfirmation)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+        .background(.regularMaterial)
     }
 
     private func addActivity() {
@@ -386,6 +420,25 @@ struct GameMasterView: View {
 
     private func removeStreak(id: String) {
         draftConfig.streaks.removeAll { $0.id == id }
+    }
+
+    private func saveConfiguration() {
+        store.apply(config: sanitizedConfig())
+        saveConfirmationNonce += 1
+        let currentNonce = saveConfirmationNonce
+        withAnimation(.spring(response: 0.24, dampingFraction: 0.66)) {
+            isShowingSavedConfirmation = true
+        }
+
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            await MainActor.run {
+                guard saveConfirmationNonce == currentNonce else { return }
+                withAnimation(.easeOut(duration: 0.18)) {
+                    isShowingSavedConfirmation = false
+                }
+            }
+        }
     }
 
     private func activityIncludedBinding(for streak: Binding<StreakDefinition>, activityID: String) -> Binding<Bool> {
@@ -459,7 +512,7 @@ struct GameMasterView: View {
 
     private func iconButton(symbol: String, accessibilityLabel: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: symbol)
+            IconGlyph(symbol: symbol)
                 .font(.headline.weight(.bold))
                 .foregroundStyle(.orange)
                 .frame(width: 34, height: 34)
@@ -508,6 +561,18 @@ private struct IconOption: Identifiable {
     var id: String { symbol }
 }
 
+private struct IconGlyph: View {
+    let symbol: String
+
+    var body: some View {
+        if symbol.unicodeScalars.allSatisfy(\.isASCII) {
+            Image(systemName: symbol)
+        } else {
+            Text(symbol)
+        }
+    }
+}
+
 private struct IconPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     let title: String
@@ -525,7 +590,7 @@ private struct IconPickerSheet: View {
                             dismiss()
                         } label: {
                             VStack(spacing: 8) {
-                                Image(systemName: option.symbol)
+                                IconGlyph(symbol: option.symbol)
                                     .font(.title2.weight(.bold))
                                     .frame(width: 42, height: 42)
                                 Text(option.title)

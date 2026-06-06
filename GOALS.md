@@ -10,9 +10,6 @@ The exact reward structure should be configurable, but here are some ideas for k
 
 (2) Consistency and streaks. There should be additional bonuses for streaks, both within a day and across days. These can be structured as a set of "streaks" which flash when obtained, but we can also tell the user when they're close so they don't give up.
 
-(3) Intermittent variable / surprises. (This part feels a little too sneaky, we can include it or not). Once in a while, but only if the structured and consistency parts are doing well enough, we can throw in a bonus variable reward. Call it a "treasure chest" or something.
-
-(4) Additional achievements! These can flash on the screen when they're activated.
 
 All the actual numbers involved, as well as what activities they describe, the streaks we want available, and the probability distributions for each of the random things above. The game master mode configures this.
 
@@ -20,13 +17,7 @@ The game master to change the number of activites, as well as their
 text -- there should be buttons to add and remove activities
 
 The streaks should be configurable -- the game master should be able to
-add/remove/configure one or more achievable streaks. Each streak which
-consists of some text + reward and (a) a set of activities which count
-toward continuing that streak (b) a required frequency (daily, weekly, etc)
-(c) a minimum streak length to get the reward (d) an (optional) extra reward
-to accumulate each time the streak gets longer (e.g. if length is 3 weeks,
-frequency is weekly, reward is +3 coins after the 3 week minimum, then an
-extra of +1 means the player getts +4 after 4 weeks, +5 after 5 weeks, etc)
+add/remove/configure one or more achievable streaks. See streaks.md for details of the streaks.
 
 Talking: since this is being made for kids as well as adults, there should be a mode where all the text that shows up in activities, achievements, etc is read aloud.
 
@@ -36,6 +27,14 @@ Piggy bank: the user can see how many coins they've collected.
 
 Password protection: the game master mode needs a special password to access. From there, all the all the configuration is opened. There are also options to revert / rewind coins (if the user cheats), or adjust the balance another way.
 
+History editor: sometimes we need to record things after the fact, or fix mistakes in our recording. See history_editor.md for more about this.
+
 "Cash Out": this is an operation where the coin balance stays the same but we keep track of how much the user has "cashed out" into real money. This basically keeps the rewards going up but also shows how much the user has earned in real money. The conversion ratio should be configurable not 1:1.
 
 Sync: the entire game state (including the configured activites, rewards for them, variable rewards, streak state, etc) should be exportable to / importable from json. At some point we should add a server and login and have all operations sync to/from the server. I'm not sure what the simplest way to do this syncing is though. Maybe I can put something really dead simple on aws? or get my own single virtual server and use it for everything? (I'm planning to have a bunch of different apps which are basically all going to want to sync in the same ways).
+
+Some ideas we tried but were later removed:
+
+- Intermittent variable / surprises. (This part feels a little too sneaky, we can include it or not). Once in a while, but only if the structured and consistency parts are doing well enough, we can throw in a bonus variable reward. Call it a "treasure chest" or something.
+
+-  Additional achievements! These can flash on the screen when they're activated.

@@ -24,74 +24,45 @@ struct DailyDefinition: Identifiable, Codable, Hashable {
     var rewardCoins: Int
 }
 
-enum StreakFrequency: String, Codable, CaseIterable, Identifiable {
-    case daily
-    case every2Days
-    case every3Days
-    case every4Days
-    case every5Days
-    case weekly
-    case every2Weeks
-    case every3Weeks
-    case every4Weeks
-    case monthly
+enum StreakBonusPreset: String, Codable, CaseIterable, Identifiable {
+    case noBreaks
+    case breaks
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .daily:
-            return "Daily"
-        case .every2Days:
-            return "Every 2 Days"
-        case .every3Days:
-            return "Every 3 Days"
-        case .every4Days:
-            return "Every 4 Days"
-        case .every5Days:
-            return "Every 5 Days"
-        case .weekly:
-            return "Weekly"
-        case .every2Weeks:
-            return "Every 2 Weeks"
-        case .every3Weeks:
-            return "Every 3 Weeks"
-        case .every4Weeks:
-            return "Every 4 Weeks"
-        case .monthly:
-            return "Monthly"
+        case .noBreaks:
+            return "No Breaks"
+        case .breaks:
+            return "Breaks"
         }
     }
 
-    var interval: Int {
+    var levels: [StreakBonusLevel] {
         switch self {
-        case .daily, .weekly, .monthly:
-            return 1
-        case .every2Days, .every2Weeks:
-            return 2
-        case .every3Days, .every3Weeks:
-            return 3
-        case .every4Days, .every4Weeks:
-            return 4
-        case .every5Days:
-            return 5
+        case .noBreaks:
+            return [
+                StreakBonusLevel(days: 2, rewardCoins: 1, breakAllowance: 0),
+                StreakBonusLevel(days: 3, rewardCoins: 2, breakAllowance: 0),
+                StreakBonusLevel(days: 5, rewardCoins: 3, breakAllowance: 0),
+                StreakBonusLevel(days: 7, rewardCoins: 5, breakAllowance: 0)
+            ]
+        case .breaks:
+            return [
+                StreakBonusLevel(days: 2, rewardCoins: 1, breakAllowance: 0),
+                StreakBonusLevel(days: 3, rewardCoins: 2, breakAllowance: 0),
+                StreakBonusLevel(days: 5, rewardCoins: 3, breakAllowance: 1),
+                StreakBonusLevel(days: 7, rewardCoins: 5, breakAllowance: 1)
+            ]
         }
     }
+}
 
-    var unitName: String {
-        switch self {
-        case .daily, .every2Days, .every3Days, .every4Days, .every5Days:
-            return "day"
-        case .weekly, .every2Weeks, .every3Weeks, .every4Weeks:
-            return "week"
-        case .monthly:
-            return "month"
-        }
-    }
-
-    var progressUnitName: String {
-        interval == 1 ? unitName : "\(interval)-\(unitName) period"
-    }
+struct StreakBonusLevel: Codable, Hashable {
+    var days: Int
+    var rewardCoins: Int
+    var breakAllowance: Int
 }
 
 struct StreakDefinition: Identifiable, Codable, Hashable {
@@ -99,10 +70,8 @@ struct StreakDefinition: Identifiable, Codable, Hashable {
     var title: String
     var detail: String
     var activityIDs: [String]
-    var frequency: StreakFrequency
-    var minimumLength: Int
-    var rewardCoins: Int
-    var extraRewardCoins: Int
+    var dailyMinimum: Int
+    var bonusPreset: StreakBonusPreset
     var symbol: String = "flame.fill"
 }
 
@@ -147,6 +116,14 @@ struct RewardEvent: Identifiable, Codable, Hashable {
     var cashOutDollars: Double?
 }
 
+struct StreakProgress: Identifiable, Codable, Hashable {
+    var streakID: String
+    var levelDays: Int
+    var lastUpdatedAt: Date
+
+    var id: String { streakID }
+}
+
 struct RewardHistoryEntry: Identifiable, Hashable {
     var event: RewardEvent
     var balanceAfter: Int
@@ -163,6 +140,7 @@ struct ActivityStats: Hashable {
 struct GameState: Codable, Hashable {
     var activityEvents: [ActivityEvent] = []
     var rewardEvents: [RewardEvent] = []
+    var streakProgress: [StreakProgress] = []
 }
 
 struct GameSnapshot: Codable, Hashable {
@@ -240,10 +218,8 @@ extension GameSnapshot {
                     title: "Three-Day Spark",
                     detail: "Complete any practice activity three days in a row.",
                     activityIDs: ["warmup", "song-practice", "sight-reading"],
-                    frequency: .daily,
-                    minimumLength: 3,
-                    rewardCoins: 4,
-                    extraRewardCoins: 0,
+                    dailyMinimum: 1,
+                    bonusPreset: .noBreaks,
                     symbol: "sparkles"
                 ),
                 StreakDefinition(
@@ -251,10 +227,8 @@ extension GameSnapshot {
                     title: "Weeklong Shine",
                     detail: "Complete any practice activity for a full week.",
                     activityIDs: ["warmup", "song-practice", "sight-reading"],
-                    frequency: .daily,
-                    minimumLength: 7,
-                    rewardCoins: 10,
-                    extraRewardCoins: 0,
+                    dailyMinimum: 1,
+                    bonusPreset: .breaks,
                     symbol: "sun.max.fill"
                 )
             ],
@@ -305,6 +279,10 @@ extension GameState {
 
     var dailyStreak: Int {
         activeDailyStreak(at: .now)
+    }
+
+    var highestStreakLevel: Int {
+        streakProgress.map(\.levelDays).max() ?? 0
     }
 
     var rewardHistory: [RewardHistoryEntry] {
@@ -361,5 +339,18 @@ extension GameState {
             currentDay = priorDay
         }
         return streak
+    }
+
+    func streakLevel(for streakID: String) -> Int {
+        streakProgress.first(where: { $0.streakID == streakID })?.levelDays ?? 0
+    }
+
+    mutating func setStreakLevel(_ levelDays: Int, for streakID: String, at date: Date) {
+        let progress = StreakProgress(streakID: streakID, levelDays: max(levelDays, 0), lastUpdatedAt: date)
+        if let index = streakProgress.firstIndex(where: { $0.streakID == streakID }) {
+            streakProgress[index] = progress
+        } else {
+            streakProgress.append(progress)
+        }
     }
 }

@@ -129,38 +129,16 @@ enum RewardEngine {
         return max(Double(activity.lockoutSeconds) - now.timeIntervalSince(lastCompletedAt), 0)
     }
 
-    static func streakLength(
+    static func streakLevel(
         for streak: StreakDefinition,
         snapshot: GameSnapshot,
-        at date: Date,
-        calendar: Calendar = .current
+        at date: Date
     ) -> Int {
-        let periodKeys = Set(
-            snapshot.state.activityEvents
-                .filter { streak.activityIDs.contains($0.activityID) && $0.createdAt <= date }
-                .map { periodKey(for: $0.createdAt, frequency: streak.frequency, calendar: calendar) }
-        ).sorted()
-
-        guard let latestPeriodKey = periodKeys.last,
-              latestPeriodKey == periodKey(for: date, frequency: streak.frequency, calendar: calendar) else {
+        guard let progress = snapshot.state.streakProgress.first(where: { $0.streakID == streak.id }),
+              progress.lastUpdatedAt <= date else {
             return 0
         }
-
-        var length = 1
-        var currentPeriodKey = latestPeriodKey
-        for priorPeriodKey in periodKeys.dropLast().reversed() {
-            guard periodDistance(
-                from: priorPeriodKey,
-                to: currentPeriodKey,
-                frequency: streak.frequency,
-                calendar: calendar
-            ) == 1 else {
-                break
-            }
-            length += 1
-            currentPeriodKey = priorPeriodKey
-        }
-        return length
+        return progress.levelDays
     }
 
     private static func updateConfiguredStreaks(
@@ -172,34 +150,52 @@ enum RewardEngine {
         var events: [RewardEvent] = []
 
         for streak in snapshot.config.streaks where streak.activityIDs.contains(activityEvent.activityID) {
-            let completedPeriodKey = periodKey(for: now, frequency: streak.frequency, calendar: calendar)
-            let alreadyCompletedPeriod = snapshot.state.activityEvents.contains { event in
-                event.id != activityEvent.id
-                    && streak.activityIDs.contains(event.activityID)
-                    && periodKey(for: event.createdAt, frequency: streak.frequency, calendar: calendar) == completedPeriodKey
-            }
-            guard !alreadyCompletedPeriod else {
+            let dailyMinimum = max(streak.dailyMinimum, 1)
+            let todayCount = snapshot.state.dailyCompletionCount(
+                at: now,
+                activityIDs: Set(streak.activityIDs),
+                calendar: calendar
+            )
+            guard todayCount == dailyMinimum else {
                 continue
             }
 
-            let length = streakLength(for: streak, snapshot: snapshot, at: now, calendar: calendar)
-            let minimumLength = max(streak.minimumLength, 1)
-            guard length >= minimumLength else {
+            let levels = streak.bonusPreset.levels.sorted { $0.days < $1.days }
+            let completedDays = completedStreakDays(
+                for: streak,
+                snapshot: snapshot,
+                through: now,
+                lookbackDays: levels.last?.days ?? 1,
+                calendar: calendar
+            )
+            let today = calendar.startOfDay(for: now)
+            let existingLevel = snapshot.state.streakLevel(for: streak.id)
+            var currentLevel = levels.last(where: { $0.days == existingLevel })
+
+            if let level = currentLevel,
+               breakCount(inLast: level.days, endingAt: today, completedDays: completedDays, calendar: calendar) > level.breakAllowance {
+                currentLevel = nil
+            }
+
+            let currentLevelDays = currentLevel?.days ?? 0
+            let consecutiveDays = consecutiveCompletedDays(endingAt: today, completedDays: completedDays, calendar: calendar)
+            let nextLevel = levels.first { $0.days > currentLevelDays && consecutiveDays >= $0.days }
+            let awardedLevel = nextLevel ?? currentLevel
+
+            guard let awardedLevel else {
+                snapshot.state.setStreakLevel(0, for: streak.id, at: now)
                 continue
             }
 
-            let extraPeriods = max(length - minimumLength, 0)
-            let coins = max(streak.rewardCoins, 0) + extraPeriods * max(streak.extraRewardCoins, 0)
-            let unit = streak.frequency.progressUnitName
-            let pluralUnit = length == 1 ? unit : "\(unit)s"
+            snapshot.state.setStreakLevel(awardedLevel.days, for: streak.id, at: now)
             let detail = streak.detail.isEmpty
-                ? "\(length) \(pluralUnit) in a row."
-                : "\(streak.detail) \(length) \(pluralUnit) in a row."
+                ? "\(awardedLevel.days) days: +\(awardedLevel.rewardCoins) bonus coins."
+                : "\(streak.detail) \(awardedLevel.days) days: +\(awardedLevel.rewardCoins) bonus coins."
             events.append(
                 recordReward(
                     title: streak.title,
                     detail: detail,
-                    coins: coins,
+                    coins: awardedLevel.rewardCoins,
                     kind: .dailyStreak,
                     activityEventID: activityEvent.id,
                     definitionID: streak.id,
@@ -239,98 +235,65 @@ enum RewardEngine {
         return event
     }
 
-    private static func periodKey(for date: Date, frequency: StreakFrequency, calendar: Calendar) -> String {
-        dayKey(for: periodStart(for: date, frequency: frequency, calendar: calendar), calendar: calendar)
-    }
-
-    private static func periodStart(for date: Date, frequency: StreakFrequency, calendar: Calendar) -> Date {
-        switch frequency {
-        case .daily, .every2Days, .every3Days, .every4Days, .every5Days:
-            return bucketedStart(
-                for: calendar.startOfDay(for: date),
-                component: .day,
-                interval: frequency.interval,
-                calendar: calendar
-            )
-        case .weekly, .every2Weeks, .every3Weeks, .every4Weeks:
-            let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
-            return bucketedStart(
-                for: weekStart,
-                component: .weekOfYear,
-                interval: frequency.interval,
-                calendar: calendar
-            )
-        case .monthly:
-            let components = calendar.dateComponents([.year, .month], from: date)
-            return calendar.date(from: components) ?? calendar.startOfDay(for: date)
+    private static func completedStreakDays(
+        for streak: StreakDefinition,
+        snapshot: GameSnapshot,
+        through date: Date,
+        lookbackDays: Int,
+        calendar: Calendar
+    ) -> Set<Date> {
+        let dailyMinimum = max(streak.dailyMinimum, 1)
+        let today = calendar.startOfDay(for: date)
+        let oldestDay = calendar.date(
+            byAdding: .day,
+            value: -max(lookbackDays - 1, 0),
+            to: today
+        ) ?? today
+        var counts: [Date: Int] = [:]
+        for event in snapshot.state.activityEvents where streak.activityIDs.contains(event.activityID) && event.createdAt <= date {
+            let eventDay = calendar.startOfDay(for: event.createdAt)
+            guard eventDay >= oldestDay else {
+                continue
+            }
+            counts[eventDay, default: 0] += 1
         }
+        return Set(counts.compactMap { day, count in
+            count >= dailyMinimum ? day : nil
+        })
     }
 
-    private static func periodDistance(
-        from lhs: String,
-        to rhs: String,
-        frequency: StreakFrequency,
+    private static func consecutiveCompletedDays(
+        endingAt date: Date,
+        completedDays: Set<Date>,
         calendar: Calendar
     ) -> Int {
-        guard let lhsDate = date(fromDayKey: lhs, calendar: calendar),
-              let rhsDate = date(fromDayKey: rhs, calendar: calendar) else {
+        var count = 0
+        var cursor = date
+        while completedDays.contains(cursor) {
+            count += 1
+            guard let priorDay = calendar.date(byAdding: .day, value: -1, to: cursor) else {
+                break
+            }
+            cursor = priorDay
+        }
+        return count
+    }
+
+    private static func breakCount(
+        inLast days: Int,
+        endingAt date: Date,
+        completedDays: Set<Date>,
+        calendar: Calendar
+    ) -> Int {
+        guard days > 0 else {
             return 0
         }
 
-        let component: Calendar.Component
-        switch frequency {
-        case .daily, .every2Days, .every3Days, .every4Days, .every5Days:
-            component = .day
-        case .weekly, .every2Weeks, .every3Weeks, .every4Weeks:
-            component = .weekOfYear
-        case .monthly:
-            component = .month
+        return (0..<days).reduce(0) { count, offset in
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: date) else {
+                return count
+            }
+            return completedDays.contains(day) ? count : count + 1
         }
-
-        let distance = calendar.dateComponents([component], from: lhsDate, to: rhsDate).value(for: component) ?? 0
-        return distance / max(frequency.interval, 1)
-    }
-
-    private static func bucketedStart(
-        for date: Date,
-        component: Calendar.Component,
-        interval: Int,
-        calendar: Calendar
-    ) -> Date {
-        guard interval > 1,
-              let referenceDate = calendar.date(from: DateComponents(year: 2001, month: 1, day: 1)) else {
-            return date
-        }
-
-        let referenceStart: Date
-        if component == .weekOfYear {
-            referenceStart = calendar.dateInterval(of: .weekOfYear, for: referenceDate)?.start ?? calendar.startOfDay(for: referenceDate)
-        } else {
-            referenceStart = calendar.startOfDay(for: referenceDate)
-        }
-
-        let distance = calendar.dateComponents([component], from: referenceStart, to: date).value(for: component) ?? 0
-        let bucketDistance = distance - distance.modulo(interval)
-        return calendar.date(byAdding: component, value: bucketDistance, to: referenceStart) ?? date
-    }
-
-    private static func dayKey(for date: Date, calendar: Calendar) -> String {
-        let components = calendar.dateComponents([.year, .month, .day], from: date)
-        return String(format: "%04d-%02d-%02d", components.year ?? 0, components.month ?? 0, components.day ?? 0)
-    }
-
-    private static func date(fromDayKey dayKey: String, calendar: Calendar) -> Date? {
-        let values = dayKey.split(separator: "-").compactMap { Int($0) }
-        guard values.count == 3 else {
-            return nil
-        }
-        return calendar.date(from: DateComponents(year: values[0], month: values[1], day: values[2]))
-    }
-}
-
-private extension Int {
-    func modulo(_ divisor: Int) -> Int {
-        let remainder = self % divisor
-        return remainder >= 0 ? remainder : remainder + divisor
     }
 }

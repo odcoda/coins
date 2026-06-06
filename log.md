@@ -126,3 +126,11 @@ removed prototype scope creep from rewards:
 - kept activities, daily bonuses, streaks, cash-out, and reward history
 Up next:
 - rebuild on the simulator and keep tuning the core daily loop
+
+## 2026-06-06 daily streak rewrite
+rewrote streaks around daily completion tiers:
+- removed interval streak configuration
+- added daily minimum presets, bonus presets, break allowance, and manual level corrections
+- verified 10 reward-engine tests on iPhone 13 mini
+Up next:
+- try the game-master streak controls on device-sized screens

@@ -17,6 +17,7 @@ struct GameMasterView: View {
 
     private let rewardOptions = Array(0...50)
     private let lockoutOptions = Array(stride(from: 5, through: 60, by: 5)) + Array(stride(from: 120, through: 600, by: 60))
+    private let dailyMinimumOptions = [1, 3, 5, 12, 20]
     private let iconOptions = [
         IconOption(title: "Leaf", symbol: "leaf.fill"),
         IconOption(title: "Music", symbol: "music.note"),
@@ -242,29 +243,24 @@ struct GameMasterView: View {
                         TextField("Reward detail", text: $streak.detail, axis: .vertical)
                             .lineLimit(2...4)
 
-                        Picker("Frequency", selection: $streak.frequency) {
-                            ForEach(StreakFrequency.allCases) { frequency in
-                                Text(frequency.displayName).tag(frequency)
+                        Picker("Daily minimum", selection: $streak.dailyMinimum) {
+                            ForEach(dailyMinimumOptions, id: \.self) { minimum in
+                                Text("\(minimum) \(minimum == 1 ? "activity" : "activities")").tag(minimum)
                             }
                         }
                         .pickerStyle(.menu)
 
-                        Picker("Reward", selection: $streak.rewardCoins) {
-                            ForEach(rewardOptions, id: \.self) { reward in
-                                Text("\(reward) \(reward == 1 ? "coin" : "coins")").tag(reward)
+                        Picker("Bonus preset", selection: $streak.bonusPreset) {
+                            ForEach(StreakBonusPreset.allCases) { preset in
+                                Text(preset.displayName).tag(preset)
                             }
                         }
                         .pickerStyle(.menu)
 
-                        Stepper(
-                            "Minimum length \(streak.minimumLength)",
-                            value: $streak.minimumLength,
-                            in: 1...60
-                        )
-
-                        Picker("Extra per period", selection: $streak.extraRewardCoins) {
-                            ForEach(rewardOptions, id: \.self) { reward in
-                                Text(reward == 0 ? "None" : "+\(reward)").tag(reward)
+                        Picker("Manual level", selection: streakLevelBinding(for: streak.id, preset: streak.bonusPreset)) {
+                            Text("None").tag(0)
+                            ForEach(streak.bonusPreset.levels, id: \.days) { level in
+                                Text("\(level.days) days").tag(level.days)
                             }
                         }
                         .pickerStyle(.menu)
@@ -359,12 +355,10 @@ struct GameMasterView: View {
             StreakDefinition(
                 id: "streak-\(UUID().uuidString)",
                 title: "New Streak",
-                detail: "Complete a qualifying activity on schedule.",
+                detail: "Complete enough qualifying activities daily.",
                 activityIDs: draftConfig.activities.map(\.id),
-                frequency: .daily,
-                minimumLength: 3,
-                rewardCoins: 3,
-                extraRewardCoins: 0,
+                dailyMinimum: 1,
+                bonusPreset: .noBreaks,
                 symbol: "flame.fill"
             )
         )
@@ -394,9 +388,9 @@ struct GameMasterView: View {
         var config = draftConfig
         let validActivityIDs = Set(config.activities.map(\.id))
         for index in config.streaks.indices {
-            config.streaks[index].minimumLength = max(config.streaks[index].minimumLength, 1)
-            config.streaks[index].rewardCoins = min(max(config.streaks[index].rewardCoins, 0), 50)
-            config.streaks[index].extraRewardCoins = min(max(config.streaks[index].extraRewardCoins, 0), 50)
+            if !dailyMinimumOptions.contains(config.streaks[index].dailyMinimum) {
+                config.streaks[index].dailyMinimum = 1
+            }
             config.streaks[index].activityIDs = config.streaks[index].activityIDs.filter { validActivityIDs.contains($0) }
             if config.streaks[index].symbol.isEmpty {
                 config.streaks[index].symbol = "flame.fill"
@@ -413,6 +407,16 @@ struct GameMasterView: View {
             config.activities[index].symbol = "checkmark.circle.fill"
         }
         return config
+    }
+
+    private func streakLevelBinding(for streakID: String, preset: StreakBonusPreset) -> Binding<Int> {
+        Binding {
+            let currentLevel = store.snapshot.state.streakLevel(for: streakID)
+            let allowedLevels = Set(preset.levels.map(\.days))
+            return allowedLevels.contains(currentLevel) ? currentLevel : 0
+        } set: { level in
+            store.adjustStreakLevel(streakID: streakID, levelDays: level)
+        }
     }
 
     private func lockoutOptions(for currentValue: Int) -> [Int] {

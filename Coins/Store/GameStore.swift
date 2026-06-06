@@ -83,8 +83,15 @@ final class GameStore: ObservableObject {
         persist()
     }
 
+    func adjustStreakLevel(streakID: String, levelDays: Int) {
+        snapshot.state.setStreakLevel(levelDays, for: streakID, at: .now)
+        persist()
+    }
+
     func apply(config: GameConfig) {
         snapshot.config = config
+        let validStreakIDs = Set(config.streaks.map(\.id))
+        snapshot.state.streakProgress.removeAll { !validStreakIDs.contains($0.streakID) }
         persist()
     }
 

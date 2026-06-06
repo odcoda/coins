@@ -439,7 +439,7 @@ private struct PiggyBankPage: View {
                         }
 
                         HStack(spacing: 8) {
-                            labelChip(title: "Streak \(store.snapshot.state.dailyStreak)d")
+                            labelChip(title: "Streak \(store.snapshot.state.highestStreakLevel)d")
                             labelChip(title: String(format: "Cashed Out $%.2f", store.snapshot.state.cashedOutDollars))
                         }
                     }

@@ -11,7 +11,7 @@ world work; it gives a configurable reward loop around a trusted completion tap.
 - SwiftUI iPhone/iPad app
 - Generated app icon in the iOS asset catalog
 - Configurable activities with picker-based rewards and lockouts
-- Same-day combo bonuses and configurable interval-based streak bonuses
+- Same-day combo bonuses and configurable daily streak bonuses
 - Always-visible coin balance with a reward fly-up animation
 - Separate piggy bank page with streak and cash-out tracking
 - Separate tracking page with recent rewards and reward-history charts
@@ -33,7 +33,7 @@ Activity cards lock after a completion. The countdown refreshes every second on
 the main screen, and a locked activity cannot be tapped again until the timer
 expires.
 
-The Piggy Bank page shows the larger balance context, daily streak, cashed-out
+The Piggy Bank page shows the larger balance context, earned streak level, cashed-out
 dollars, pending cash-out value, and the cash-out control.
 
 The Tracking page shows today and lifetime stats, recent reward events, a
@@ -42,9 +42,10 @@ built from immutable reward history.
 
 Game Master is opened from the drawer. The seeded password is `1234`. Game
 Master currently supports speech mode, adding/removing/editing activities,
-picker-based activity reward/lockout edits, configurable activity-scoped
-streaks, icon selection for activities and streaks, balance adjustments, JSON
-import/export, seed reset, and changing the game-master password.
+picker-based activity reward/lockout edits, configurable activity-scoped daily
+streaks, manual streak-level adjustments, icon selection for activities and
+streaks, balance adjustments, JSON import/export, seed reset, and changing the
+game-master password.
 
 Cash Out does not remove coins from the piggy bank. It records how many new coins
 have been converted to earned dollars since the last cash-out, using the
@@ -57,9 +58,10 @@ The engine is intentionally deterministic when tests pass explicit dates.
 
 - `ActivityDefinition` gives the known structured reward and has its own lockout.
 - `DailyDefinition` triggers from qualifying completions during the current day.
-- `StreakDefinition` triggers once per configured period for its chosen
-  activities. Periods can be daily, every 2-5 days, weekly, every 2-4 weeks,
-  or monthly, with optional extra reward growth after the minimum streak length.
+- `StreakDefinition` triggers when its chosen activities meet the configured
+  daily minimum. Presets define 2-, 3-, 5-, and 7-day bonus tiers, with optional
+  break allowance after a tier has been earned.
+- `StreakProgress` records each streak's current earned tier and last update.
 - `ActivityEvent` records completed real-world activities.
 - `RewardEvent` records rewards, adjustments, and cash-out events.
 
@@ -67,9 +69,11 @@ The engine is intentionally deterministic when tests pass explicit dates.
 
 The app stores a `GameSnapshot`, which contains the current `GameConfig` and an
 event-backed `GameState`, as JSON in app support storage. Balance, progress,
-and streaks are derived from the event histories. Game Master's export/import
-actions use the same snapshot format, so a complete local game can be backed up,
-restored, or moved to another device manually.
+and daily counts are derived from the event histories. Earned streak tiers are
+stored as compact state because break allowance depends on the user's full
+history. Game Master's export/import actions use the same snapshot format, so a
+complete local game can be backed up, restored, or moved to another device
+manually.
 
 Longer term, this snapshot shape is the natural boundary for server sync: send
 operations or snapshots to a backend, then reconcile into `GameSnapshot`.

@@ -101,7 +101,7 @@ struct HistoryEditorView: View {
                     activities: store.snapshot.config.activities
                 )
                 .environmentObject(store)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
         }
@@ -182,6 +182,27 @@ private struct DayActivitySheet: View {
         day.date.formatted(date: .complete, time: .omitted)
     }
 
+    private var hasChanges: Bool {
+        activities.contains { activity in
+            draftCounts[activity.id, default: 0] != originalCounts[activity.id, default: 0]
+        }
+    }
+
+    private var balanceDelta: Int {
+        HistoryRewardEstimator.delta(
+            from: originalCounts,
+            to: draftCounts,
+            activities: activities
+        )
+    }
+
+    private var balanceDeltaText: String {
+        if balanceDelta > 0 {
+            return "+\(balanceDelta)"
+        }
+        return "\(balanceDelta)"
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -224,6 +245,21 @@ private struct DayActivitySheet: View {
                     .fontWeight(.bold)
                     .buttonStyle(.borderedProminent)
                     .tint(.orange)
+
+                    if hasChanges {
+                        Button {
+                            saveChanges(adjustBalance: true)
+                        } label: {
+                            Label(
+                                "Save Changes and Adjust Balance (\(balanceDeltaText))",
+                                systemImage: "bitcoinsign.circle.fill"
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+                        .fontWeight(.bold)
+                        .buttonStyle(.bordered)
+                        .tint(balanceDelta >= 0 ? .green : .red)
+                    }
 
                     if didSave {
                         Label("History saved", systemImage: "checkmark.circle.fill")
@@ -282,8 +318,12 @@ private struct DayActivitySheet: View {
         }
     }
 
-    private func saveChanges() {
-        store.rewriteActivityHistory(on: day.date, countsByActivityID: draftCounts)
+    private func saveChanges(adjustBalance: Bool = false) {
+        store.rewriteActivityHistory(
+            on: day.date,
+            countsByActivityID: draftCounts,
+            balanceDelta: adjustBalance ? balanceDelta : 0
+        )
         originalCounts = store.snapshot.state.activityCounts(on: day.date)
         draftCounts = originalCounts
         didSave = true

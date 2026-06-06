@@ -88,14 +88,21 @@ final class GameStore: ObservableObject {
         persist()
     }
 
-    func rewriteActivityHistory(on date: Date, countsByActivityID: [String: Int]) {
-        snapshot.state.rewriteActivityHistory(
+    func rewriteActivityHistory(on date: Date, countsByActivityID: [String: Int], balanceDelta: Int = 0) {
+        var updated = snapshot
+        updated.state.rewriteActivityHistory(
             on: date,
             countsByActivityID: countsByActivityID,
-            activities: snapshot.config.activities
+            activities: updated.config.activities
         )
-        latestResult = nil
-        cashOutMessage = "Updated activity history."
+        let adjustment = RewardEngine.adjustCoins(
+            snapshot: &updated,
+            delta: balanceDelta,
+            reason: "History correction for \(date.formatted(date: .abbreviated, time: .omitted))."
+        )
+        snapshot = updated
+        latestResult = adjustment.map { CompletionResult(events: [$0], deniedReason: nil, speechText: $0.title) }
+        cashOutMessage = adjustment == nil ? "Updated activity history." : "Updated activity history and balance."
         persist()
     }
 

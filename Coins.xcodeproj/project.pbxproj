@@ -34,7 +34,7 @@
 
 /* Begin PBXFileReference section */
 		1058F5A26FA4C3A455B87DB9 /* CoinBurstView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoinBurstView.swift; sourceTree = "<group>"; };
-		275A00EACE2A6B92F1F7D975 /* Coins.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Coins.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		275A00EACE2A6B92F1F7D975 /* Coins.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Coins.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		364B521664D721D9B22A15A3 /* RewardEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardEngine.swift; sourceTree = "<group>"; };
 		3AD8AA87EFA25D9ECBDD32B2 /* SpeechCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechCoordinator.swift; sourceTree = "<group>"; };
 		4813891872BCA0FCD6457B71 /* HistoryEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryEditorView.swift; sourceTree = "<group>"; };
@@ -201,11 +201,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1540;
-				TargetAttributes = {
-					0451FDD1F80BEAB2F1C34137 = {
-						ProvisioningStyle = Automatic;
-					};
-				};
 			};
 			buildConfigurationList = CA9F8F73526DF85AE0D5037F /* Build configuration list for PBXProject "Coins" */;
 			compatibilityVersion = "Xcode 15.3";
@@ -304,15 +299,20 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HR6SZC4PVN;
 				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Coins/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.odile.coins;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odcoda.coins;
 				PRODUCT_NAME = Coins;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "odcoda-dev-1";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -321,15 +321,20 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = HR6SZC4PVN;
 				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Coins/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.odile.coins;
+				PRODUCT_BUNDLE_IDENTIFIER = com.odcoda.coins;
 				PRODUCT_NAME = Coins;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "odcoda-dev-1";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;

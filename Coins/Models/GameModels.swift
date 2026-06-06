@@ -455,56 +455,66 @@ extension GameSnapshot {
             masterPassword: "1234",
             activities: [
                 ActivityDefinition(
-                    id: "warmup",
-                    title: "Warm-Up",
-                    detail: "Two focused minutes to get started.",
+                    id: "concert-piece",
+                    title: "Concert Piece",
+                    detail: "See the Little Monkey",
                     baseReward: 1,
-                    lockoutSeconds: 5,
-                    symbol: "leaf.fill",
-                    repetitionBonusPreset: .high3x,
-                    dailyMaximum: 0
-                ),
-                ActivityDefinition(
-                    id: "song-practice",
-                    title: "Song Practice",
-                    detail: "Run one assigned song from start to finish.",
-                    baseReward: 2,
-                    lockoutSeconds: 5,
+                    lockoutSeconds: 30,
                     symbol: "music.note",
                     repetitionBonusPreset: .high3x,
-                    dailyMaximum: 0
+                    dailyMaximum: 20
                 ),
                 ActivityDefinition(
-                    id: "sight-reading",
-                    title: "Sight Reading",
-                    detail: "Try something new without stopping.",
+                    id: "review-piece",
+                    title: "Review Piece",
+                    detail: "anything from Bunny Ballads",
+                    baseReward: 1,
+                    lockoutSeconds: 30,
+                    symbol: "music.note",
+                    repetitionBonusPreset: .medium5x,
+                    dailyMaximum: 20
+                ),
+                ActivityDefinition(
+                    id: "violin-exercise",
+                    title: "Violin Exercise",
+                    detail: "bow or fingers, full set of exercises",
                     baseReward: 2,
-                    lockoutSeconds: 5,
+                    lockoutSeconds: 30,
                     symbol: "eye.fill",
-                    repetitionBonusPreset: .high3x,
-                    dailyMaximum: 0
-                )
+                    repetitionBonusPreset: .none,
+                    dailyMaximum: 2
+                ),
+                ActivityDefinition(
+                    id: "piano-piece",
+                    title: "Piano Piece",
+                    detail: "any recent piece from Piano Adventures Primer",
+                    baseReward: 1,
+                    lockoutSeconds: 30,
+                    symbol: "music.note",
+                    repetitionBonusPreset: .medium5x,
+                    dailyMaximum: 20
+                ),
             ],
             dailyCompletionBonuses: [],
             streaks: [
                 StreakDefinition(
-                    id: "streak-3",
-                    title: "Three-Day Spark",
-                    detail: "Complete any practice activity three days in a row.",
-                    activityIDs: ["warmup", "song-practice", "sight-reading"],
-                    dailyMinimum: 1,
-                    bonusPreset: .noBreaks,
+                    id: "streak-violin",
+                    title: "Violin Streak",
+                    detail: "practice, practice, practice!",
+                    activityIDs: ["concert-piece", "review-piece"],
+                    dailyMinimum: 3,
+                    bonusPreset: .breaks,
                     symbol: "sparkles"
                 ),
                 StreakDefinition(
-                    id: "streak-7",
-                    title: "Weeklong Shine",
-                    detail: "Complete any practice activity for a full week.",
-                    activityIDs: ["warmup", "song-practice", "sight-reading"],
-                    dailyMinimum: 1,
+                    id: "streak-piano",
+                    title: "Piano Streak",
+                    detail: "practice, practice, practice!",
+                    activityIDs: ["piano-piece"],
+                    dailyMinimum: 3,
                     bonusPreset: .breaks,
-                    symbol: "sun.max.fill"
-                )
+                    symbol: "sparkles"
+                ),
             ],
             economy: EconomyConfig()
         ),

@@ -235,3 +235,25 @@ updated cash-out conversion:
 - made both the coin count and dollar-cent amount adjustable in settings
 Up next:
 - confirm the cash-out settings layout on iPhone 13 mini
+
+## 2026-06-06 history rewrite main refresh
+fixed current-day history edits on the main page:
+- reassigned the updated snapshot after history rewrites so SwiftUI refreshes activity counts and reward state
+Up next:
+- manually confirm current-day edits update the main screen immediately
+
+## 2026-06-06 music seed consistency
+aligned follow-up code with the music-practice seed:
+- updated reward-engine tests to use concert, review, violin, and piano seed activities
+- made new activity defaults match the 30-second, medium-bonus, 20-per-day seed style
+- documented iPhone 13 mini as the simulator test destination
+Up next:
+- reset seed data in the simulator before manual testing
+
+## 2026-06-06 architecture and branch merge
+merged Game Master screen work and documented the current architecture:
+- preserved history balance corrections, sectioned Game Master flows, and local seed updates
+- added a technical data-model and code-architecture reference
+- verified 16 reward-engine tests on iPhone 13 mini
+Up next:
+- prune merged feature branches after pushing main

@@ -100,7 +100,7 @@ operations or snapshots to a backend, then reconcile into `GameSnapshot`.
 
 ```sh
 ./scripts/regenerate_project.sh
-xcodebuild -scheme Coins -destination 'platform=iOS Simulator,name=iPhone 15' test
+xcodebuild -scheme Coins -destination 'platform=iOS Simulator,name=iPhone 13 mini' test
 ```
 
 If Xcode lists a different simulator set, use:

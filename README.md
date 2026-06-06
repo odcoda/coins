@@ -49,7 +49,7 @@ game-master password.
 
 Cash Out does not remove coins from the piggy bank. It records how many new coins
 have been converted to earned dollars since the last cash-out, using the
-configured coins-per-dollar ratio.
+configured N coins for $X.YZ ratio.
 
 ## Reward Model
 

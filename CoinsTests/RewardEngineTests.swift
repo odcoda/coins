@@ -253,7 +253,24 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertEqual(snapshot.state.coinBalance, 3)
         XCTAssertNil(secondCashOut)
         XCTAssertEqual(snapshot.state.cashedOutCoinsWatermark, 3)
-        XCTAssertEqual(snapshot.state.cashedOutDollars, 0.15, accuracy: 0.0001)
+        XCTAssertEqual(snapshot.config.economy.coinsPerCashOutAmount, 5)
+        XCTAssertEqual(snapshot.config.economy.cashOutCents, 1)
+        XCTAssertEqual(snapshot.state.cashedOutDollars, 0.006, accuracy: 0.0001)
+    }
+
+    func testCashOutUsesAdjustableCoinsForCentsRate() {
+        var snapshot = GameSnapshot.seed
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        snapshot.config.economy = EconomyConfig(coinsPerCashOutAmount: 3, cashOutCents: 25)
+
+        _ = RewardEngine.complete(activityID: "song-practice", snapshot: &snapshot, now: start)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: start.addingTimeInterval(301))
+
+        let cashOut = RewardEngine.cashOut(snapshot: &snapshot, now: start.addingTimeInterval(600))
+
+        XCTAssertNotNil(cashOut)
+        XCTAssertEqual(snapshot.state.coinBalance, 3)
+        XCTAssertEqual(snapshot.state.cashedOutDollars, 0.25, accuracy: 0.0001)
     }
 
     func testCompletionRecordsActivityHistoryAndRewardProvenance() {

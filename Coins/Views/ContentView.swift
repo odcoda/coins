@@ -532,7 +532,17 @@ private struct PiggyBankPage: View {
     }
 
     private var pendingDollars: Double {
-        Double(uncashedCoins) / store.snapshot.config.economy.coinsPerDollar
+        store.snapshot.config.economy.dollars(for: uncashedCoins)
+    }
+
+    private var cashOutRateValue: String {
+        let economy = store.snapshot.config.economy
+        let coins = economy.coinsPerCashOutAmount
+        return "\(coins) \(coins == 1 ? "coin" : "coins")"
+    }
+
+    private var cashOutRateNote: String {
+        String(format: "for $%.2f", store.snapshot.config.economy.cashOutDollars)
     }
 
     var body: some View {
@@ -579,8 +589,8 @@ private struct PiggyBankPage: View {
                     statCard(title: "New Coins", value: "\(uncashedCoins)", note: String(format: "$%.2f pending", pendingDollars))
                     statCard(
                         title: "Cash Out Rate",
-                        value: String(format: "%.0f", store.snapshot.config.economy.coinsPerDollar),
-                        note: "coins per dollar"
+                        value: cashOutRateValue,
+                        note: cashOutRateNote
                     )
                 }
 

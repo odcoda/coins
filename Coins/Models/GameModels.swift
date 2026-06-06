@@ -162,7 +162,45 @@ struct StreakDefinition: Identifiable, Codable, Hashable {
 }
 
 struct EconomyConfig: Codable, Hashable {
-    var coinsPerDollar: Double
+    var coinsPerCashOutAmount: Int
+    var cashOutCents: Int
+
+    init(coinsPerCashOutAmount: Int = 5, cashOutCents: Int = 1) {
+        self.coinsPerCashOutAmount = max(coinsPerCashOutAmount, 1)
+        self.cashOutCents = max(cashOutCents, 1)
+    }
+
+    var cashOutDollars: Double {
+        Double(cashOutCents) / 100
+    }
+
+    func dollars(for coins: Int) -> Double {
+        Double(max(coins, 0)) * cashOutDollars / Double(max(coinsPerCashOutAmount, 1))
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case coinsPerCashOutAmount
+        case cashOutCents
+        case coinsPerDollar
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let coinsPerCashOutAmount = try container.decodeIfPresent(Int.self, forKey: .coinsPerCashOutAmount),
+           let cashOutCents = try container.decodeIfPresent(Int.self, forKey: .cashOutCents) {
+            self.init(coinsPerCashOutAmount: coinsPerCashOutAmount, cashOutCents: cashOutCents)
+        } else if let oldCoinsPerDollar = try container.decodeIfPresent(Double.self, forKey: .coinsPerDollar) {
+            self.init(coinsPerCashOutAmount: Int(oldCoinsPerDollar.rounded()), cashOutCents: 100)
+        } else {
+            self.init()
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(coinsPerCashOutAmount, forKey: .coinsPerCashOutAmount)
+        try container.encode(cashOutCents, forKey: .cashOutCents)
+    }
 }
 
 struct GameConfig: Codable, Hashable {
@@ -447,7 +485,7 @@ extension GameSnapshot {
                     symbol: "sun.max.fill"
                 )
             ],
-            economy: EconomyConfig(coinsPerDollar: 20)
+            economy: EconomyConfig()
         ),
         state: GameState()
     )

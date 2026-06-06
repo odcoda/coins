@@ -89,8 +89,7 @@ enum RewardEngine {
             return nil
         }
 
-        let coinsPerDollar = max(snapshot.config.economy.coinsPerDollar, 1)
-        let dollars = Double(uncashedCoins) / coinsPerDollar
+        let dollars = snapshot.config.economy.dollars(for: uncashedCoins)
         return recordReward(
             title: "Cash Out",
             detail: String(format: "Converted %d new coins into $%.2f earned.", uncashedCoins, dollars),

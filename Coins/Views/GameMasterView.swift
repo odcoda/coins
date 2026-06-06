@@ -41,6 +41,12 @@ struct GameMasterView: View {
         IconOption(title: "Notes", symbol: "music.quarternote.3")
     ]
 
+    private var rateSummary: String {
+        let coins = draftConfig.economy.coinsPerCashOutAmount
+        let coinLabel = coins == 1 ? "coin" : "coins"
+        return String(format: "%d %@ for $%.2f", coins, coinLabel, draftConfig.economy.cashOutDollars)
+    }
+
     var body: some View {
         if showsCloseButton {
             NavigationStack {
@@ -159,12 +165,16 @@ struct GameMasterView: View {
                     }
                 }
                 HStack {
-                    Text("Coins per dollar")
+                    Text("Cash-out rate")
                     Spacer()
-                    Stepper(value: $draftConfig.economy.coinsPerDollar, in: 1...200, step: 1) {
-                        Text(String(format: "%.0f", draftConfig.economy.coinsPerDollar))
-                    }
-                    .fixedSize()
+                    Text(rateSummary)
+                        .foregroundStyle(.secondary)
+                }
+                Stepper(value: $draftConfig.economy.coinsPerCashOutAmount, in: 1...1_000, step: 1) {
+                    Text("\(draftConfig.economy.coinsPerCashOutAmount) \(draftConfig.economy.coinsPerCashOutAmount == 1 ? "coin" : "coins")")
+                }
+                Stepper(value: $draftConfig.economy.cashOutCents, in: 1...10_000, step: 1) {
+                    Text(String(format: "$%.2f", draftConfig.economy.cashOutDollars))
                 }
             }
 

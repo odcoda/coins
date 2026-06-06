@@ -210,3 +210,10 @@ streamlined history editing:
 - kept the in-sheet save confirmation and verified tests on iPhone 13 mini
 Up next:
 - try editing several days without leaving the calendar
+
+## 2026-06-06 cash-out cents rate
+updated cash-out conversion:
+- changed the default rate to 5 coins for $0.01
+- made both the coin count and dollar-cent amount adjustable in settings
+Up next:
+- confirm the cash-out settings layout on iPhone 13 mini

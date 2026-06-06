@@ -143,6 +143,14 @@ struct GameMasterView: View {
 
     private var editor: some View {
         Form {
+            Section("History") {
+                Button {
+                    isShowingHistoryEditor = true
+                } label: {
+                    Label("Open History Editor", systemImage: "calendar.badge.clock")
+                }
+            }
+
             Section("Basics") {
                 Toggle("Read reward text aloud", isOn: $draftConfig.speechEnabled)
                 Picker("Theme", selection: $draftConfig.theme) {
@@ -323,14 +331,6 @@ struct GameMasterView: View {
                     store.adjustCoins(by: -5, reason: adjustmentReason)
                 }
                 TextField("Adjustment reason", text: $adjustmentReason)
-            }
-
-            Section("History") {
-                Button {
-                    isShowingHistoryEditor = true
-                } label: {
-                    Label("Open History Editor", systemImage: "calendar.badge.clock")
-                }
             }
 
             Section("Sync") {

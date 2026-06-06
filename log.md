@@ -202,3 +202,11 @@ repaired history editor presentation:
 - replaced the cramped popover with a reachable bottom sheet
 Up next:
 - manually confirm the sheet handoff into the day editor
+
+## 2026-06-06 inline history sheet editor
+streamlined history editing:
+- moved the history editor link above Basics in Game Master
+- put the per-day count pickers directly in the day bottom sheet
+- kept the in-sheet save confirmation and verified tests on iPhone 13 mini
+Up next:
+- try editing several days without leaving the calendar

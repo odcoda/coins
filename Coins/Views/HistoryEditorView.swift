@@ -6,7 +6,6 @@ struct HistoryEditorView: View {
 
     @State private var endDate = Date.now
     @State private var selectedDay: ActivityHistoryDay?
-    @State private var editingDate: Date?
 
     private let gridSpacing: CGFloat = 6
 
@@ -100,16 +99,10 @@ struct HistoryEditorView: View {
                 DayActivitySheet(
                     day: day,
                     activities: store.snapshot.config.activities
-                ) {
-                    editingDate = day.date
-                    selectedDay = nil
-                }
-                .presentationDetents([.height(320), .medium])
+                )
+                .environmentObject(store)
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
-            }
-            .fullScreenCover(item: editingDateBinding) { editableDate in
-                PerDateHistoryEditorView(date: editableDate.date)
-                    .environmentObject(store)
             }
         }
     }
@@ -170,81 +163,14 @@ struct HistoryEditorView: View {
         return "\(formatter.string(from: day.date)), \(day.totalCount) activities"
     }
 
-    private var editingDateBinding: Binding<EditableDate?> {
-        Binding {
-            editingDate.map(EditableDate.init(date:))
-        } set: { value in
-            editingDate = value?.date
-        }
-    }
-}
-
-private struct EditableDate: Identifiable {
-    let date: Date
-
-    var id: TimeInterval {
-        date.timeIntervalSinceReferenceDate
-    }
 }
 
 private struct DayActivitySheet: View {
+    @EnvironmentObject private var store: GameStore
     @Environment(\.dismiss) private var dismiss
 
     let day: ActivityHistoryDay
     let activities: [ActivityDefinition]
-    let onEdit: () -> Void
-
-    private var dateText: String {
-        day.date.formatted(date: .abbreviated, time: .omitted)
-    }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section(dateText) {
-                    if day.totalCount == 0 {
-                        Text("No recorded activities.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(activities) { activity in
-                            let count = day.countsByActivityID[activity.id, default: 0]
-                            if count > 0 {
-                                Label("\(activity.title): \(count)", systemImage: activity.symbol)
-                            }
-                        }
-                    }
-                }
-
-                Section {
-                    Button {
-                        onEdit()
-                    } label: {
-                        Label("Edit Day", systemImage: "pencil")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
-                }
-            }
-            .navigationTitle("Day History")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct PerDateHistoryEditorView: View {
-    @EnvironmentObject private var store: GameStore
-    @Environment(\.dismiss) private var dismiss
-
-    let date: Date
 
     @State private var draftCounts: [String: Int] = [:]
     @State private var originalCounts: [String: Int] = [:]
@@ -252,11 +178,15 @@ private struct PerDateHistoryEditorView: View {
 
     private let countOptions = Array(0...50)
 
+    private var dateText: String {
+        day.date.formatted(date: .complete, time: .omitted)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                Section(date.formatted(date: .complete, time: .omitted)) {
-                    ForEach(store.snapshot.config.activities) { activity in
+                Section(dateText) {
+                    ForEach(activities) { activity in
                         HStack(spacing: 12) {
                             Image(systemName: activity.symbol)
                                 .font(.headline.weight(.semibold))
@@ -301,11 +231,11 @@ private struct PerDateHistoryEditorView: View {
                     }
                 }
             }
-            .navigationTitle("Edit Day")
+            .navigationTitle("Day History")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
                         dismiss()
                     }
                 }
@@ -345,16 +275,16 @@ private struct PerDateHistoryEditorView: View {
     }
 
     private func loadCounts() {
-        originalCounts = store.snapshot.state.activityCounts(on: date)
+        originalCounts = store.snapshot.state.activityCounts(on: day.date)
         draftCounts = originalCounts
-        for activity in store.snapshot.config.activities where draftCounts[activity.id] == nil {
+        for activity in activities where draftCounts[activity.id] == nil {
             draftCounts[activity.id] = 0
         }
     }
 
     private func saveChanges() {
-        store.rewriteActivityHistory(on: date, countsByActivityID: draftCounts)
-        originalCounts = store.snapshot.state.activityCounts(on: date)
+        store.rewriteActivityHistory(on: day.date, countsByActivityID: draftCounts)
+        originalCounts = store.snapshot.state.activityCounts(on: day.date)
         draftCounts = originalCounts
         didSave = true
     }

@@ -16,6 +16,7 @@ struct GameMasterView: View {
     @State private var iconSelection: IconSelection?
     @State private var isShowingSavedConfirmation = false
     @State private var saveConfirmationNonce = 0
+    @State private var isShowingHistoryEditor = false
 
     private let rewardOptions = Array(0...50)
     private let lockoutOptions = Array(stride(from: 5, through: 60, by: 5)) + Array(stride(from: 120, through: 600, by: 60))
@@ -106,6 +107,10 @@ struct GameMasterView: View {
                 iconSelection = nil
             }
             .presentationDetents([.medium])
+        }
+        .fullScreenCover(isPresented: $isShowingHistoryEditor) {
+            HistoryEditorView()
+                .environmentObject(store)
         }
     }
 
@@ -318,6 +323,14 @@ struct GameMasterView: View {
                     store.adjustCoins(by: -5, reason: adjustmentReason)
                 }
                 TextField("Adjustment reason", text: $adjustmentReason)
+            }
+
+            Section("History") {
+                Button {
+                    isShowingHistoryEditor = true
+                } label: {
+                    Label("Open History Editor", systemImage: "calendar.badge.clock")
+                }
             }
 
             Section("Sync") {

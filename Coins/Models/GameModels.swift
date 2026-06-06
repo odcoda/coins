@@ -183,11 +183,138 @@ enum RewardKind: String, Codable {
     case cashOut
 }
 
+enum ActivityEventOccurrence: Hashable {
+    case timestamp(Date)
+    case manuallyAdded(day: Date)
+
+    var effectiveDate: Date {
+        switch self {
+        case .timestamp(let date), .manuallyAdded(let date):
+            return date
+        }
+    }
+
+    var timestamp: Date? {
+        switch self {
+        case .timestamp(let date):
+            return date
+        case .manuallyAdded:
+            return nil
+        }
+    }
+
+    var isManuallyAdded: Bool {
+        timestamp == nil
+    }
+}
+
+extension ActivityEventOccurrence: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case kind
+        case date
+        case day
+    }
+
+    private enum Kind: String, Codable {
+        case timestamp
+        case manuallyAdded
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let kind = try container.decode(Kind.self, forKey: .kind)
+        switch kind {
+        case .timestamp:
+            self = .timestamp(try container.decode(Date.self, forKey: .date))
+        case .manuallyAdded:
+            self = .manuallyAdded(day: try container.decode(Date.self, forKey: .day))
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .timestamp(let date):
+            try container.encode(Kind.timestamp, forKey: .kind)
+            try container.encode(date, forKey: .date)
+        case .manuallyAdded(let day):
+            try container.encode(Kind.manuallyAdded, forKey: .kind)
+            try container.encode(day, forKey: .day)
+        }
+    }
+}
+
 struct ActivityEvent: Identifiable, Codable, Hashable {
     var id: UUID
-    var createdAt: Date
+    var occurrence: ActivityEventOccurrence
     var activityID: String
     var activityTitle: String
+
+    var createdAt: Date {
+        occurrence.effectiveDate
+    }
+
+    var timestamp: Date? {
+        occurrence.timestamp
+    }
+
+    var isManuallyAdded: Bool {
+        occurrence.isManuallyAdded
+    }
+
+    init(
+        id: UUID,
+        occurrence: ActivityEventOccurrence,
+        activityID: String,
+        activityTitle: String
+    ) {
+        self.id = id
+        self.occurrence = occurrence
+        self.activityID = activityID
+        self.activityTitle = activityTitle
+    }
+
+    init(
+        id: UUID,
+        createdAt: Date,
+        activityID: String,
+        activityTitle: String
+    ) {
+        self.init(
+            id: id,
+            occurrence: .timestamp(createdAt),
+            activityID: activityID,
+            activityTitle: activityTitle
+        )
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case occurrence
+        case createdAt
+        case activityID
+        case activityTitle
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        if let occurrence = try container.decodeIfPresent(ActivityEventOccurrence.self, forKey: .occurrence) {
+            self.occurrence = occurrence
+        } else {
+            self.occurrence = .timestamp(try container.decode(Date.self, forKey: .createdAt))
+        }
+        activityID = try container.decode(String.self, forKey: .activityID)
+        activityTitle = try container.decode(String.self, forKey: .activityTitle)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(occurrence, forKey: .occurrence)
+        try container.encode(activityID, forKey: .activityID)
+        try container.encode(activityTitle, forKey: .activityTitle)
+    }
 }
 
 struct RewardEvent: Identifiable, Codable, Hashable {
@@ -221,6 +348,19 @@ struct ActivityStats: Hashable {
     var totalCompletions: Int
     var completionsToday: Int
     var lastCompletedAt: Date?
+}
+
+struct ActivityHistoryDay: Identifiable, Hashable {
+    var date: Date
+    var countsByActivityID: [String: Int]
+
+    var id: Date {
+        date
+    }
+
+    var totalCount: Int {
+        countsByActivityID.values.reduce(0, +)
+    }
 }
 
 struct GameState: Codable, Hashable {
@@ -386,6 +526,84 @@ extension GameState {
             calendar.isDate(event.createdAt, inSameDayAs: date)
                 && (activityIDs?.contains(event.activityID) ?? true)
         }.count
+    }
+
+    func activityCountsByDay(
+        endingAt endDate: Date,
+        days: Int = 30,
+        calendar: Calendar = .current
+    ) -> [ActivityHistoryDay] {
+        let clampedDays = max(days, 1)
+        let endDay = calendar.startOfDay(for: endDate)
+        return (0..<clampedDays).compactMap { offset in
+            guard let day = calendar.date(byAdding: .day, value: -(clampedDays - 1 - offset), to: endDay) else {
+                return nil
+            }
+            return ActivityHistoryDay(date: day, countsByActivityID: activityCounts(on: day, calendar: calendar))
+        }
+    }
+
+    func activityCounts(on date: Date, calendar: Calendar = .current) -> [String: Int] {
+        var counts: [String: Int] = [:]
+        for event in activityEvents where calendar.isDate(event.createdAt, inSameDayAs: date) {
+            counts[event.activityID, default: 0] += 1
+        }
+        return counts
+    }
+
+    mutating func rewriteActivityHistory(
+        on date: Date,
+        countsByActivityID targetCounts: [String: Int],
+        activities: [ActivityDefinition],
+        calendar: Calendar = .current
+    ) {
+        let day = calendar.startOfDay(for: date)
+        let validActivityIDs = Set(activities.map(\.id))
+
+        for activity in activities {
+            let targetCount = min(max(targetCounts[activity.id, default: 0], 0), 50)
+            let matchingIndices = activityEvents.indices.filter { index in
+                let event = activityEvents[index]
+                return event.activityID == activity.id && calendar.isDate(event.createdAt, inSameDayAs: day)
+            }
+            let delta = targetCount - matchingIndices.count
+
+            if delta < 0 {
+                let removalIDs = matchingIndices
+                    .map { activityEvents[$0] }
+                    .sorted { lhs, rhs in
+                        switch (lhs.timestamp, rhs.timestamp) {
+                        case let (lhsDate?, rhsDate?):
+                            return lhsDate > rhsDate
+                        case (_?, nil):
+                            return true
+                        case (nil, _?):
+                            return false
+                        case (nil, nil):
+                            return lhs.id.uuidString > rhs.id.uuidString
+                        }
+                    }
+                    .prefix(-delta)
+                    .map(\.id)
+                let removalIDSet = Set(removalIDs)
+                activityEvents.removeAll { removalIDSet.contains($0.id) }
+            } else if delta > 0 {
+                for _ in 0..<delta {
+                    activityEvents.append(
+                        ActivityEvent(
+                            id: UUID(),
+                            occurrence: .manuallyAdded(day: day),
+                            activityID: activity.id,
+                            activityTitle: activity.title
+                        )
+                    )
+                }
+            }
+        }
+
+        activityEvents.removeAll { event in
+            calendar.isDate(event.createdAt, inSameDayAs: day) && !validActivityIDs.contains(event.activityID)
+        }
     }
 
     func activeDailyStreak(at date: Date, calendar: Calendar = .current) -> Int {

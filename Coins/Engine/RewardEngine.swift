@@ -179,7 +179,7 @@ enum RewardEngine {
 
             let currentLevelDays = currentLevel?.days ?? 0
             let consecutiveDays = consecutiveCompletedDays(endingAt: today, completedDays: completedDays, calendar: calendar)
-            let nextLevel = levels.first { $0.days > currentLevelDays && consecutiveDays >= $0.days }
+            let nextLevel = levels.last { $0.days > currentLevelDays && consecutiveDays >= $0.days }
             let awardedLevel = nextLevel ?? currentLevel
 
             guard let awardedLevel else {

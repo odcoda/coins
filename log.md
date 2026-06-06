@@ -186,3 +186,11 @@ merged main into daily streak work:
 - kept sf-symbol activity icons and pinned save controls
 Up next:
 - run reward-engine tests on iPhone 13 mini
+
+## 2026-06-06 history editor
+added password-gated activity history repair:
+- added a 30-day calendar grid and per-day count editor
+- stored manual history events separately from timestamped completions
+- verified 15 reward-engine tests on iPhone 13 mini
+Up next:
+- try the history editor flow on device-sized screens

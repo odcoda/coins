@@ -88,6 +88,17 @@ final class GameStore: ObservableObject {
         persist()
     }
 
+    func rewriteActivityHistory(on date: Date, countsByActivityID: [String: Int]) {
+        snapshot.state.rewriteActivityHistory(
+            on: date,
+            countsByActivityID: countsByActivityID,
+            activities: snapshot.config.activities
+        )
+        latestResult = nil
+        cashOutMessage = "Updated activity history."
+        persist()
+    }
+
     func apply(config: GameConfig) {
         snapshot.config = config
         let validStreakIDs = Set(config.streaks.map(\.id))

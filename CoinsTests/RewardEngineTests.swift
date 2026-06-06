@@ -270,6 +270,74 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertEqual(snapshot.state.rewardEvents, result.events)
     }
 
+    func testHistoryRewriteCutsLaterTimestampsFirstAndAddsManualEvents() {
+        var snapshot = GameSnapshot.seed
+        let calendar = Calendar(identifier: .gregorian)
+        let day = calendar.date(from: DateComponents(year: 2024, month: 1, day: 8))!
+        snapshot.config.activities[0].lockoutSeconds = 0
+
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: day.addingTimeInterval(60), calendar: calendar)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: day.addingTimeInterval(120), calendar: calendar)
+        _ = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: day.addingTimeInterval(180), calendar: calendar)
+
+        snapshot.state.rewriteActivityHistory(
+            on: day,
+            countsByActivityID: ["warmup": 1],
+            activities: snapshot.config.activities,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(snapshot.state.activityCounts(on: day, calendar: calendar)["warmup"], 1)
+        XCTAssertEqual(snapshot.state.activityEvents.first?.createdAt, day.addingTimeInterval(60))
+
+        snapshot.state.rewriteActivityHistory(
+            on: day,
+            countsByActivityID: ["warmup": 3],
+            activities: snapshot.config.activities,
+            calendar: calendar
+        )
+
+        let warmupEvents = snapshot.state.activityEvents.filter { $0.activityID == "warmup" }
+        XCTAssertEqual(warmupEvents.count, 3)
+        XCTAssertEqual(warmupEvents.filter(\.isManuallyAdded).count, 2)
+        XCTAssertEqual(warmupEvents.compactMap(\.timestamp), [day.addingTimeInterval(60)])
+    }
+
+    func testManuallyAddedHistoryCountsTowardFutureStreakLogic() {
+        var snapshot = GameSnapshot.seed
+        snapshot.config.streaks = [
+            StreakDefinition(
+                id: "daily-practice",
+                title: "Daily Practice",
+                detail: "Practice daily.",
+                activityIDs: ["warmup"],
+                dailyMinimum: 1,
+                bonusPreset: .noBreaks
+            )
+        ]
+        let calendar = Calendar(identifier: .gregorian)
+        let dayOne = calendar.date(from: DateComponents(year: 2024, month: 1, day: 8))!
+        let dayTwo = calendar.date(byAdding: .day, value: 1, to: dayOne)!
+        let dayThree = calendar.date(byAdding: .day, value: 2, to: dayOne)!
+
+        snapshot.state.rewriteActivityHistory(
+            on: dayOne,
+            countsByActivityID: ["warmup": 1],
+            activities: snapshot.config.activities,
+            calendar: calendar
+        )
+        snapshot.state.rewriteActivityHistory(
+            on: dayTwo,
+            countsByActivityID: ["warmup": 1],
+            activities: snapshot.config.activities,
+            calendar: calendar
+        )
+        let result = RewardEngine.complete(activityID: "warmup", snapshot: &snapshot, now: dayThree, calendar: calendar)
+
+        XCTAssertEqual(snapshot.state.streakLevel(for: "daily-practice"), 3)
+        XCTAssertTrue(result.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 2 }))
+    }
+
     func testRewindRecordsActualDeltaWithoutTakingBalanceNegative() {
         var snapshot = GameSnapshot.seed
         let now = Date(timeIntervalSince1970: 1_700_000_000)

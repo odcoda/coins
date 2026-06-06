@@ -33,12 +33,10 @@ struct GameMasterView: View {
         IconOption(title: "Pencil", symbol: "pencil"),
         IconOption(title: "Trophy", symbol: "trophy.fill"),
         IconOption(title: "Target", symbol: "target"),
-        IconOption(title: "Hand", symbol: "✋"),
-        IconOption(title: "Finger", symbol: "☝️"),
-        IconOption(title: "Foot", symbol: "🦶"),
-        IconOption(title: "Violin", symbol: "🎻"),
-        IconOption(title: "Piano", symbol: "🎹"),
-        IconOption(title: "Notes", symbol: "🎶")
+        IconOption(title: "Hand", symbol: "hand.raised.fill"),
+        IconOption(title: "Finger", symbol: "hand.point.up.fill"),
+        IconOption(title: "Piano", symbol: "pianokeys"),
+        IconOption(title: "Notes", symbol: "music.quarternote.3")
     ]
 
     var body: some View {
@@ -512,7 +510,7 @@ struct GameMasterView: View {
 
     private func iconButton(symbol: String, accessibilityLabel: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            IconGlyph(symbol: symbol)
+            Image(systemName: symbol)
                 .font(.headline.weight(.bold))
                 .foregroundStyle(.orange)
                 .frame(width: 34, height: 34)
@@ -561,18 +559,6 @@ private struct IconOption: Identifiable {
     var id: String { symbol }
 }
 
-private struct IconGlyph: View {
-    let symbol: String
-
-    var body: some View {
-        if symbol.unicodeScalars.allSatisfy(\.isASCII) {
-            Image(systemName: symbol)
-        } else {
-            Text(symbol)
-        }
-    }
-}
-
 private struct IconPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     let title: String
@@ -590,7 +576,7 @@ private struct IconPickerSheet: View {
                             dismiss()
                         } label: {
                             VStack(spacing: 8) {
-                                IconGlyph(symbol: option.symbol)
+                                Image(systemName: option.symbol)
                                     .font(.title2.weight(.bold))
                                     .frame(width: 42, height: 42)
                                 Text(option.title)

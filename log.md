@@ -156,3 +156,10 @@ polished the game-master activity editor:
 - pinned save configuration to the bottom with a visible saved confirmation
 Up next:
 - manually try icon picking and saving on the iphone 13 mini
+
+## 2026-06-06 sf-symbol icon cleanup
+kept game-master icon choices on sf symbols:
+- replaced emoji additions with hand, finger, piano, and multiple-note symbols
+- omitted violin and foot because they are not available as matching sf symbols
+Up next:
+- manually try icon picking and saving on the iphone 13 mini

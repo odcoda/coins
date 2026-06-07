@@ -257,3 +257,10 @@ merged Game Master screen work and documented the current architecture:
 - verified 16 reward-engine tests on iPhone 13 mini
 Up next:
 - prune merged feature branches after pushing main
+
+## 2026-06-07 streak break timeline test
+documented a 20-day break-presets streak timeline:
+- added coverage for no-activity days 6, 9, and 17
+- cleaned stale activity IDs from history-estimator tests
+Up next:
+- confirm whether the stored-level behavior on no-activity days matches product expectations

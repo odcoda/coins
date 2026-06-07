@@ -198,6 +198,47 @@ final class RewardEngineTests: XCTestCase {
         XCTAssertTrue(restart.events.contains(where: { $0.kind == .dailyStreak && $0.coins == 1 }))
     }
 
+    func testBreakPresetTwentyDayTimelineWithMultipleBreaks() {
+        var snapshot = GameSnapshot.seed
+        snapshot.config.streaks = [
+            StreakDefinition(
+                id: "daily-practice",
+                title: "Daily Practice",
+                detail: "Practice daily.",
+                activityIDs: ["concert-piece"],
+                dailyMinimum: 1,
+                bonusPreset: .breaks
+            )
+        ]
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let start = calendar.date(from: DateComponents(year: 2024, month: 1, day: 1, hour: 12))!
+        let breakDays: Set<Int> = [6, 9, 17]
+        let expectedLevelsAfterDay = [
+            0, 2, 3, 3, 5,
+            5, 5, 5, 5, 0,
+            2, 3, 3, 5, 5,
+            7, 7, 7, 7, 7
+        ]
+        var actualLevelsAfterDay: [Int] = []
+
+        for dayNumber in 1...20 {
+            let day = calendar.date(byAdding: .day, value: dayNumber - 1, to: start)!
+            if !breakDays.contains(dayNumber) {
+                _ = RewardEngine.complete(
+                    activityID: "concert-piece",
+                    snapshot: &snapshot,
+                    now: day,
+                    calendar: calendar
+                )
+            }
+            actualLevelsAfterDay.append(snapshot.state.streakLevel(for: "daily-practice"))
+        }
+
+        XCTAssertEqual(actualLevelsAfterDay, expectedLevelsAfterDay)
+    }
+
     func testStreakIgnoresActivitiesOutsideConfiguredSet() {
         var snapshot = GameSnapshot.seed
         snapshot.config.streaks = [
@@ -339,8 +380,8 @@ final class RewardEngineTests: XCTestCase {
 
         let coins = HistoryRewardEstimator.coins(
             for: [
-                "warmup": 6,
-                "song-practice": 5
+                "concert-piece": 6,
+                "review-piece": 5
             ],
             activities: snapshot.config.activities
         )
@@ -357,15 +398,15 @@ final class RewardEngineTests: XCTestCase {
                 id: "daily-practice",
                 title: "Daily Practice",
                 detail: "Practice daily.",
-                activityIDs: ["warmup"],
+                activityIDs: ["concert-piece"],
                 dailyMinimum: 1,
                 bonusPreset: .noBreaks
             )
         ]
 
         let delta = HistoryRewardEstimator.delta(
-            from: ["warmup": 2],
-            to: ["warmup": 3],
+            from: ["concert-piece": 2],
+            to: ["concert-piece": 3],
             activities: snapshot.config.activities
         )
 
